@@ -8,9 +8,6 @@ import Control.Monad            (forever)
 import Data.ByteString          (ByteString)
 
 import Crypto.Noise.Cipher.ChaChaPoly1305
-import Crypto.Noise.Curve
-import Crypto.Noise.Curve.Curve25519
-import Crypto.Noise.Types
 
 import Pipes hiding (Proxy)
 import Pipes.Noise
@@ -18,18 +15,6 @@ import Pipes.Noise
 import HandshakeStates
 import Imports
 import Instances()
-
-is :: KeyPair Curve25519
-is = curveBytesToPair . bsToSB' $ "I\f\232\218A\210\230\147\FS\222\167\v}l\243!\168.\ESC\t\SYN\"\169\179A`\DC28\211\169tC"
-
-rs :: KeyPair Curve25519
-rs = curveBytesToPair . bsToSB' $ "\ETB\157\&7\DC2\252\NUL\148\172\148\133\218\207\&8\221y\144\209\168FX\224Ser_\178|\153.\FSg&"
-
-re :: KeyPair Curve25519
-re = curveBytesToPair . bsToSB' $ "<\231\151\151\180\217\146\DLEI}\160N\163iKc\162\210Y\168R\213\206&gm\169r\SUB[\\'"
-
-handshakeKeys :: HandshakeKeys
-handshakeKeys = HandshakeKeys is rs re
 
 data HandshakeType = NoiseNN
                    | NoiseKN
@@ -53,50 +38,49 @@ data HandshakeType = NoiseNN
                    deriving (Eq)
 
 mkHandshakePipe :: HandshakeType
-                -> HandshakeKeys
                 -> MVar (CipherStatePair ChaChaPoly1305)
                 -> MVar (CipherStatePair ChaChaPoly1305)
                 -> (HandshakePipe IO (), HandshakePipe IO ())
-mkHandshakePipe ht hks csmv1 csmv2 =
+mkHandshakePipe ht csmv1 csmv2 =
   case ht of
     NoiseNN -> (noiseNNIPipe noiseNNIHS csmv1,
                 noiseNNRPipe noiseNNRHS csmv2)
-    NoiseKN -> (noiseKNIPipe (noiseKNIHS hks) csmv1,
-                noiseKNRPipe (noiseKNRHS hks) csmv2)
-    NoiseNK -> (noiseNKIPipe (noiseNKIHS hks) csmv1,
-                noiseNKRPipe (noiseNKRHS hks) csmv2)
-    NoiseKK -> (noiseKKIPipe (noiseKKIHS hks) csmv1,
-                noiseKKRPipe (noiseKKRHS hks) csmv2)
-    NoiseNE -> (noiseNEIPipe (noiseNEIHS hks) csmv1,
-                noiseNERPipe (noiseNERHS hks) csmv2)
-    NoiseKE -> (noiseKEIPipe (noiseKEIHS hks) csmv1,
-                noiseKERPipe (noiseKERHS hks) csmv2)
-    NoiseNX -> (noiseNXIPipe (noiseNXIHS hks) csmv1,
-                noiseNXRPipe (noiseNXRHS hks) csmv2)
-    NoiseKX -> (noiseKXIPipe (noiseKXIHS hks) csmv1,
-                noiseKXRPipe (noiseKXRHS hks) csmv2)
-    NoiseXN -> (noiseXNIPipe (noiseXNIHS hks) csmv1,
-                noiseXNRPipe (noiseXNRHS hks) csmv2)
-    NoiseIN -> (noiseINIPipe (noiseINIHS hks) csmv1,
-                noiseINRPipe (noiseINRHS hks) csmv2)
-    NoiseXK -> (noiseXKIPipe (noiseXKIHS hks) csmv1,
-                noiseXKRPipe (noiseXKRHS hks) csmv2)
-    NoiseIK -> (noiseIKIPipe (noiseIKIHS hks) csmv1,
-                noiseIKRPipe (noiseIKRHS hks) csmv2)
-    NoiseXE -> (noiseXEIPipe (noiseXEIHS hks) csmv1,
-                noiseXERPipe (noiseXERHS hks) csmv2)
-    NoiseIE -> (noiseIEIPipe (noiseIEIHS hks) csmv1,
-                noiseIERPipe (noiseIERHS hks) csmv2)
-    NoiseXX -> (noiseXXIPipe (noiseXXIHS hks) csmv1,
-                noiseXXRPipe (noiseXXRHS hks) csmv2)
-    NoiseIX -> (noiseIXIPipe (noiseIXIHS hks) csmv1,
-                noiseIXRPipe (noiseIXRHS hks) csmv2)
-    NoiseN  -> (noiseNIPipe  (noiseNIHS  hks) csmv1,
-                noiseNRPipe  (noiseNRHS  hks) csmv2)
-    NoiseK  -> (noiseKIPipe  (noiseKIHS  hks) csmv1,
-                noiseKRPipe  (noiseKRHS  hks) csmv2)
-    NoiseX  -> (noiseXIPipe  (noiseXIHS  hks) csmv1,
-                noiseXRPipe  (noiseXRHS  hks) csmv2)
+    NoiseKN -> (noiseKNIPipe noiseKNIHS csmv1,
+                noiseKNRPipe noiseKNRHS csmv2)
+    NoiseNK -> (noiseNKIPipe noiseNKIHS csmv1,
+                noiseNKRPipe noiseNKRHS csmv2)
+    NoiseKK -> (noiseKKIPipe noiseKKIHS csmv1,
+                noiseKKRPipe noiseKKRHS csmv2)
+    NoiseNE -> (noiseNEIPipe noiseNEIHS csmv1,
+                noiseNERPipe noiseNERHS csmv2)
+    NoiseKE -> (noiseKEIPipe noiseKEIHS csmv1,
+                noiseKERPipe noiseKERHS csmv2)
+    NoiseNX -> (noiseNXIPipe noiseNXIHS csmv1,
+                noiseNXRPipe noiseNXRHS csmv2)
+    NoiseKX -> (noiseKXIPipe noiseKXIHS csmv1,
+                noiseKXRPipe noiseKXRHS csmv2)
+    NoiseXN -> (noiseXNIPipe noiseXNIHS csmv1,
+                noiseXNRPipe noiseXNRHS csmv2)
+    NoiseIN -> (noiseINIPipe noiseINIHS csmv1,
+                noiseINRPipe noiseINRHS csmv2)
+    NoiseXK -> (noiseXKIPipe noiseXKIHS csmv1,
+                noiseXKRPipe noiseXKRHS csmv2)
+    NoiseIK -> (noiseIKIPipe noiseIKIHS csmv1,
+                noiseIKRPipe noiseIKRHS csmv2)
+    NoiseXE -> (noiseXEIPipe noiseXEIHS csmv1,
+                noiseXERPipe noiseXERHS csmv2)
+    NoiseIE -> (noiseIEIPipe noiseIEIHS csmv1,
+                noiseIERPipe noiseIERHS csmv2)
+    NoiseXX -> (noiseXXIPipe noiseXXIHS csmv1,
+                noiseXXRPipe noiseXXRHS csmv2)
+    NoiseIX -> (noiseIXIPipe noiseIXIHS csmv1,
+                noiseIXRPipe noiseIXRHS csmv2)
+    NoiseN  -> (noiseNIPipe  noiseNIHS  csmv1,
+                noiseNRPipe  noiseNRHS  csmv2)
+    NoiseK  -> (noiseKIPipe  noiseKIHS  csmv1,
+                noiseKRPipe  noiseKRHS  csmv2)
+    NoiseX  -> (noiseXIPipe  noiseXIHS  csmv1,
+                noiseXRPipe  noiseXRHS  csmv2)
 
 aggregator :: MVar [ByteString]
            -> Consumer' ByteString IO ()
@@ -125,7 +109,7 @@ runPipe ht = ioProperty $ do
   csmv1     <- newEmptyMVar
   csmv2     <- newEmptyMVar
 
-  let (initPipe, respPipe) = mkHandshakePipe ht handshakeKeys csmv1 csmv2
+  let (initPipe, respPipe) = mkHandshakePipe ht csmv1 csmv2
 
   _ <- concurrently (runEffect (mVarProducer msgmv1 >-> initPipe >-> mVarConsumer msgmv2))
                     (runEffect (mVarProducer msgmv2 >-> respPipe >-> mVarConsumer msgmv1))
