@@ -1,10 +1,6 @@
 {-# LANGUAGE OverloadedStrings, RankNTypes #-}
 module Handshake where
 
-import Imports
-import Instances()
-import HandshakeStates
-
 import Control.Concurrent.Async (concurrently)
 import Control.Concurrent.MVar  (MVar, newEmptyMVar, takeMVar,
                                  putMVar, newMVar)
@@ -18,6 +14,10 @@ import Crypto.Noise.Types
 
 import Pipes hiding (Proxy)
 import Pipes.Noise
+
+import HandshakeStates
+import Imports
+import Instances()
 
 is :: KeyPair Curve25519
 is = curveBytesToPair . bsToSB' $ "I\f\232\218A\210\230\147\FS\222\167\v}l\243!\168.\ESC\t\SYN\"\169\179A`\DC28\211\169tC"
