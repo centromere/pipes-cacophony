@@ -33,7 +33,7 @@ import Crypto.Noise.Hash.SHA256
 import Pipes.Noise
 
 data HandshakeKeys =
-  HandshakeKeys { initStatic    :: KeyPair Curve25519
+  HandshakeKeys { initStatic    :: PublicKey Curve25519
                 , respStatic    :: KeyPair Curve25519
                 , respEphemeral :: KeyPair Curve25519
                 }
@@ -232,7 +232,7 @@ noiseKNRHS HandshakeKeys{..} =
   ""
   Nothing
   Nothing
-  (Just (snd initStatic))
+  (Just initStatic)
   Nothing
 
 noiseNKRHS :: HandshakeKeys
@@ -256,7 +256,7 @@ noiseKKRHS HandshakeKeys{..} =
   ""
   (Just respStatic)
   Nothing
-  (Just (snd initStatic))
+  (Just initStatic)
   Nothing
 
 noiseNERHS :: HandshakeKeys
@@ -280,7 +280,7 @@ noiseKERHS HandshakeKeys{..} =
   ""
   (Just respStatic)
   (Just respEphemeral)
-  (Just (snd initStatic))
+  (Just initStatic)
   Nothing
 
 noiseNXRHS :: HandshakeKeys
@@ -304,7 +304,7 @@ noiseKXRHS HandshakeKeys{..} =
   ""
   (Just respStatic)
   Nothing
-  (Just (snd initStatic))
+  (Just initStatic)
   Nothing
 
 noiseXNRHS :: HandshakeKeys

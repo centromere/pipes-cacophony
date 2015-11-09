@@ -24,8 +24,11 @@ import Crypto.Noise.Types       (bsToSB', sbToBS')
 
 import Handshakes
 
-readKey :: FilePath -> IO (KeyPair Curve25519)
-readKey f = fmap (curveBytesToPair . bsToSB') (readFile f)
+readPrivateKey :: FilePath -> IO (KeyPair Curve25519)
+readPrivateKey f = fmap (curveBytesToPair . bsToSB') (readFile f)
+
+readPublicKey :: FilePath -> IO (PublicKey Curve25519)
+readPublicKey f = fmap (curveBytesToPub . bsToSB') (readFile f)
 
 genAndWriteKey :: FilePath -> IO (KeyPair Curve25519)
 genAndWriteKey f = do
@@ -34,18 +37,19 @@ genAndWriteKey f = do
   writeFile (f `mappend` ".pub") $ (sbToBS' . curvePubToBytes) pub
   return pair
 
-processKey :: FilePath -> IO (KeyPair Curve25519)
-processKey f = do
+processPrivateKey :: FilePath -> IO (KeyPair Curve25519)
+processPrivateKey f = do
   exists <- doesFileExist f
   if exists then
-    readKey f
+    readPrivateKey f
   else
     genAndWriteKey f
 
 main :: IO ()
 main = do
   [port] <- getArgs
-  [is, rs, re] <- forM ["init_static", "resp_static", "resp_ephemeral"] processKey
+  [rs, re] <- forM ["resp_static", "resp_ephemeral"] processPrivateKey
+  is <- readPublicKey "init_static.pub"
 
   logHandle <- openLog "debug.log"
   au <- mkAutoUpdate defaultUpdateSettings { updateAction = getDateTime }

@@ -35,8 +35,8 @@ import Pipes.Noise
 
 data HandshakeKeys =
   HandshakeKeys { initStatic    :: KeyPair Curve25519
-                , respStatic    :: KeyPair Curve25519
-                , respEphemeral :: KeyPair Curve25519
+                , respStatic    :: PublicKey Curve25519
+                , respEphemeral :: PublicKey Curve25519
                 }
 
 data HandshakeException = HandshakeFailed
@@ -245,7 +245,7 @@ noiseNKIHS HandshakeKeys{..} =
   ""
   Nothing
   Nothing
-  (Just (snd respStatic))
+  (Just respStatic)
   Nothing
 
 noiseKKIHS :: HandshakeKeys
@@ -257,7 +257,7 @@ noiseKKIHS HandshakeKeys{..} =
   ""
   (Just initStatic)
   Nothing
-  (Just (snd respStatic))
+  (Just respStatic)
   Nothing
 
 noiseNEIHS :: HandshakeKeys
@@ -269,8 +269,8 @@ noiseNEIHS HandshakeKeys{..} =
   ""
   Nothing
   Nothing
-  (Just (snd respStatic))
-  (Just (snd respEphemeral))
+  (Just respStatic)
+  (Just respEphemeral)
 
 noiseKEIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
@@ -281,8 +281,8 @@ noiseKEIHS HandshakeKeys{..} =
   ""
   (Just initStatic)
   Nothing
-  (Just (snd respStatic))
-  (Just (snd respEphemeral))
+  (Just respStatic)
+  (Just respEphemeral)
 
 noiseNXIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
@@ -305,7 +305,7 @@ noiseKXIHS HandshakeKeys{..} =
   ""
   (Just initStatic)
   Nothing
-  (Just (snd respStatic))
+  (Just respStatic)
   Nothing
 
 noiseXNIHS :: HandshakeKeys
@@ -341,7 +341,7 @@ noiseXKIHS HandshakeKeys{..} =
   ""
   (Just initStatic)
   Nothing
-  (Just (snd respStatic))
+  (Just respStatic)
   Nothing
 
 noiseIKIHS :: HandshakeKeys
@@ -353,7 +353,7 @@ noiseIKIHS HandshakeKeys{..} =
   ""
   (Just initStatic)
   Nothing
-  (Just (snd respStatic))
+  (Just respStatic)
   Nothing
 
 noiseXEIHS :: HandshakeKeys
@@ -365,8 +365,8 @@ noiseXEIHS HandshakeKeys{..} =
   ""
   (Just initStatic)
   Nothing
-  (Just (snd respStatic))
-  (Just (snd respEphemeral))
+  (Just respStatic)
+  (Just respEphemeral)
 
 noiseIEIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
@@ -377,8 +377,8 @@ noiseIEIHS HandshakeKeys{..} =
   ""
   (Just initStatic)
   Nothing
-  (Just (snd respStatic))
-  (Just (snd respEphemeral))
+  (Just respStatic)
+  (Just respEphemeral)
 
 noiseXXIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
