@@ -60,12 +60,30 @@ main = do
     let clientReceiver = fromSocketTimeout 120000000 s 4096
         clientSender   = toSocket s
 
-    handle (exLogger ip) $ processHandshake keys (clientReceiver, clientSender)
+    logMsg logHandle au ip "connection established"
+    handle (exLogger ip) $ processHandshake
+                           keys
+                           (clientReceiver, clientSender)
+                           (logMsg logHandle au ip)
+    logMsg logHandle au ip "connection closed"
 
 openLog :: FilePath -> IO LoggerSet
 openLog file = do
   _ <- setFileCreationMask 0o000
   newFileLoggerSet 1 file
+
+logMsg :: LoggerSet
+       -> IO ByteString
+       -> SockAddr
+       -> ByteString
+       -> IO ()
+logMsg ls getCachedDate ip msg = do
+  zdt <- getCachedDate
+  (pushLogStr ls . toLogStr) . (`append` "\n") . encode $
+    object [ "date"    .= unpack zdt
+           , "message" .= unpack msg
+           , "ip"      .= show ip
+           ]
 
 logException :: LoggerSet
              -> IO ByteString

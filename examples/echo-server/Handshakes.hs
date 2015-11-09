@@ -8,10 +8,11 @@ module Handshakes
 
 import Control.Concurrent.MVar  (MVar, newEmptyMVar)
 import Control.Exception        (Exception, throw, throwIO)
-import Control.Monad            (unless, forever)
+import Control.Monad            (unless)
 import Data.Aeson               (ToJSON, FromJSON, parseJSON, (.:),
                                  Value(..), (.=), toJSON, object, withObject)
 import Data.ByteString          (ByteString)
+import Data.ByteString.Char8    (pack)
 import qualified Data.ByteString.Base64 as B64 (encode, decode)
 import Data.Maybe               (isNothing, fromJust)
 import Data.Text                (Text)
@@ -61,6 +62,7 @@ data HandshakeType = NoiseNN
                    | NoiseIE
                    | NoiseXX
                    | NoiseIX
+                   deriving (Show)
 
 instance FromJSON HandshakeType where
   parseJSON (String ht)
@@ -133,16 +135,19 @@ makeHSN ht = T.concat ["Noise_", ht, "_25519_ChaChaPoly1305_SHA256"]
 
 processHandshake :: HandshakeKeys
                  -> (ClientReceiver, ClientSender)
+                 -> (ByteString -> IO ())
                  -> IO ()
-processHandshake hks (cr, cs) = do
+processHandshake hks (cr, cs) logger = do
   csmv <- newEmptyMVar
 
   mer <- evalStateT decode cr
   unless (isNothing mer) $
     case fromJust mer of
       Left e -> throwIO e
-      Right (InitialMessage r) ->
+      Right (InitialMessage r) -> do
+        logger $ "requested handshake: " `mappend` (pack . show) r
         runHandshake $ mkHandshakePipe r hks csmv
+        logger "handshake complete"
 
   runEffect $
     cr >-> deserializeM >-> messageDecryptPipe csmv >-> messageEncryptPipe csmv >-> serializeM >-> cs
