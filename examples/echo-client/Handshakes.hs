@@ -7,7 +7,7 @@ module Handshakes
     processHandshake
   ) where
 
-import Control.Concurrent.Async (concurrently)
+import Control.Concurrent.Async (race_)
 import Control.Concurrent.MVar  (MVar, newEmptyMVar)
 import Control.Exception        (Exception, throw, throwIO)
 import Data.Aeson               (ToJSON, FromJSON, parseJSON, (.:),
@@ -147,8 +147,8 @@ processHandshake hks (cs, cr) ht = do
 
   putStrLn "Handshake complete"
 
-  void $ concurrently (runEffect (P.stdin >-> messageEncryptPipe csmv >-> serializeM >-> cs))
-                      (runEffect (cr >-> deserializeM >-> messageDecryptPipe csmv >-> P.stdout))
+  race_ (runEffect (P.stdin >-> messageEncryptPipe csmv >-> serializeM >-> cs))
+        (runEffect (cr >-> deserializeM >-> messageDecryptPipe csmv >-> P.stdout))
 
 deserializeHM :: Pipe ByteString ByteString IO ()
 deserializeHM = parseForever_ decode >-> grabResult

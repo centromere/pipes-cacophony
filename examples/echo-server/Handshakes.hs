@@ -144,7 +144,7 @@ processHandshake hks (cr, cs) = do
       Right (InitialMessage r) ->
         runHandshake $ mkHandshakePipe r hks csmv
 
-  forever . runEffect $
+  runEffect $
     cr >-> deserializeM >-> messageDecryptPipe csmv >-> messageEncryptPipe csmv >-> serializeM >-> cs
   where
     runHandshake hp = runEffect $ cr >-> deserializeHM >-> hp >-> serializeHM >-> cs
