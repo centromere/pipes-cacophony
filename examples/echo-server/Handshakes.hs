@@ -23,13 +23,12 @@ import Pipes
 import Pipes.Aeson
 import Pipes.Parse
 
-import Crypto.Noise.Descriptors
 import Crypto.Noise.Handshake
+import Crypto.Noise.HandshakePatterns
 import Crypto.Noise.Cipher.ChaChaPoly1305
 import Crypto.Noise.Curve
 import Crypto.Noise.Curve.Curve25519
 import Crypto.Noise.Hash.SHA256
-import Crypto.Noise.Types
 
 import Pipes.Noise
 
@@ -132,12 +131,6 @@ type ClientSender    = Consumer' ByteString IO ()
 makeHSN :: Text -> Text
 makeHSN ht = T.concat ["Noise_", ht, "_25519_ChaChaPoly1305_SHA256"]
 
-makeHSN' :: ByteString -> ScrubbedBytes
-makeHSN' ht = concatSB [prefix, convert ht, suffix]
-  where
-    prefix = bsToSB' "Noise_"
-    suffix = bsToSB' "_25519_ChaChaPoly1305_SHA256"
-
 processHandshake :: HandshakeKeys
                  -> (ClientReceiver, ClientSender)
                  -> IO ()
@@ -202,194 +195,210 @@ mkHandshakePipe :: HandshakeType
                 -> HandshakePipe IO ()
 mkHandshakePipe ht hks csmv =
   case ht of
-    NoiseNN -> noiseNNRPipe noiseNNHS csmv
-    NoiseKN -> noiseKNRPipe (noiseKNHS hks) csmv
-    NoiseNK -> noiseNKRPipe (noiseNKHS hks) csmv
-    NoiseKK -> noiseKKRPipe (noiseKKHS hks) csmv
-    NoiseNE -> noiseNERPipe (noiseNEHS hks) csmv
-    NoiseKE -> noiseKERPipe (noiseKEHS hks) csmv
-    NoiseNX -> noiseNXRPipe (noiseNXHS hks) csmv
-    NoiseKX -> noiseKXRPipe (noiseKXHS hks) csmv
-    NoiseXN -> noiseXNRPipe (noiseXNHS hks) csmv
-    NoiseIN -> noiseINRPipe (noiseINHS hks) csmv
-    NoiseXK -> noiseXKRPipe (noiseXKHS hks) csmv
-    NoiseIK -> noiseIKRPipe (noiseIKHS hks) csmv
-    NoiseXE -> noiseXERPipe (noiseXEHS hks) csmv
-    NoiseIE -> noiseIERPipe (noiseIEHS hks) csmv
-    NoiseXX -> noiseXXRPipe (noiseXXHS hks) csmv
-    NoiseIX -> noiseIXRPipe (noiseIXHS hks) csmv
+    NoiseNN -> noiseNNRPipe noiseNNRHS csmv
+    NoiseKN -> noiseKNRPipe (noiseKNRHS hks) csmv
+    NoiseNK -> noiseNKRPipe (noiseNKRHS hks) csmv
+    NoiseKK -> noiseKKRPipe (noiseKKRHS hks) csmv
+    NoiseNE -> noiseNERPipe (noiseNERHS hks) csmv
+    NoiseKE -> noiseKERPipe (noiseKERHS hks) csmv
+    NoiseNX -> noiseNXRPipe (noiseNXRHS hks) csmv
+    NoiseKX -> noiseKXRPipe (noiseKXRHS hks) csmv
+    NoiseXN -> noiseXNRPipe (noiseXNRHS hks) csmv
+    NoiseIN -> noiseINRPipe (noiseINRHS hks) csmv
+    NoiseXK -> noiseXKRPipe (noiseXKRHS hks) csmv
+    NoiseIK -> noiseIKRPipe (noiseIKRHS hks) csmv
+    NoiseXE -> noiseXERPipe (noiseXERHS hks) csmv
+    NoiseIE -> noiseIERPipe (noiseIERHS hks) csmv
+    NoiseXX -> noiseXXRPipe (noiseXXRHS hks) csmv
+    NoiseIX -> noiseIXRPipe (noiseIXRHS hks) csmv
 
-noiseNNHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseNNHS =
+noiseNNRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseNNRHS =
   handshakeState
-  (makeHSN' "NN")
-  Nothing
+  "NN"
+  noiseNNR
+  ""
   Nothing
   Nothing
   Nothing
   Nothing
 
-noiseKNHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseKNHS HandshakeKeys{..} =
+noiseKNRHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseKNRHS HandshakeKeys{..} =
   handshakeState
-  (makeHSN' "KN")
+  "KN"
+  noiseKNR
+  ""
   Nothing
   Nothing
   (Just (snd initStatic))
   Nothing
-  (Just noiseKNR0)
 
-noiseNKHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseNKHS HandshakeKeys{..} =
+noiseNKRHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseNKRHS HandshakeKeys{..} =
   handshakeState
-  (makeHSN' "NK")
+  "NK"
+  noiseNKR
+  ""
   (Just respStatic)
   Nothing
   Nothing
   Nothing
-  (Just noiseNKR0)
 
-noiseKKHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseKKHS HandshakeKeys{..} =
+noiseKKRHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseKKRHS HandshakeKeys{..} =
   handshakeState
-  (makeHSN' "KK")
-  (Just respStatic)
-  Nothing
-  (Just (snd initStatic))
-  Nothing
-  (Just noiseKKR0)
-
-noiseNEHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseNEHS HandshakeKeys{..} =
-  handshakeState
-  (makeHSN' "NE")
-  (Just respStatic)
-  (Just respEphemeral)
-  Nothing
-  Nothing
-  (Just noiseNER0)
-
-noiseKEHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseKEHS HandshakeKeys{..} =
-  handshakeState
-  (makeHSN' "KE")
-  (Just respStatic)
-  (Just respEphemeral)
-  (Just (snd initStatic))
-  Nothing
-  (Just noiseKER0)
-
-noiseNXHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseNXHS HandshakeKeys{..} =
-  handshakeState
-  (makeHSN' "NX")
-  (Just respStatic)
-  Nothing
-  Nothing
-  Nothing
-  Nothing
-
-noiseKXHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseKXHS HandshakeKeys{..} =
-  handshakeState
-  (makeHSN' "KX")
+  "KK"
+  noiseKKR
+  ""
   (Just respStatic)
   Nothing
   (Just (snd initStatic))
   Nothing
-  (Just noiseKXR0)
 
-noiseXNHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseXNHS HandshakeKeys{..} =
+noiseNERHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseNERHS HandshakeKeys{..} =
   handshakeState
-  (makeHSN' "XN")
-  Nothing
-  Nothing
-  Nothing
-  Nothing
-  Nothing
-
-noiseINHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseINHS HandshakeKeys{..} =
-  handshakeState
-  (makeHSN' "IN")
-  Nothing
-  Nothing
-  Nothing
-  Nothing
-  Nothing
-
-noiseXKHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseXKHS HandshakeKeys{..} =
-  handshakeState
-  (makeHSN' "XK")
-  (Just respStatic)
-  Nothing
-  Nothing
-  Nothing
-  (Just noiseXKR0)
-
-noiseIKHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseIKHS HandshakeKeys{..} =
-  handshakeState
-  (makeHSN' "IK")
-  (Just respStatic)
-  Nothing
-  Nothing
-  Nothing
-  (Just noiseIKR0)
-
-noiseXEHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseXEHS HandshakeKeys{..} =
-  handshakeState
-  (makeHSN' "XE")
+  "NE"
+  noiseNER
+  ""
   (Just respStatic)
   (Just respEphemeral)
   Nothing
   Nothing
-  (Just noiseXER0)
 
-noiseIEHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseIEHS HandshakeKeys{..} =
+noiseKERHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseKERHS HandshakeKeys{..} =
   handshakeState
-  (makeHSN' "IE")
+  "KE"
+  noiseKER
+  ""
+  (Just respStatic)
+  (Just respEphemeral)
+  (Just (snd initStatic))
+  Nothing
+
+noiseNXRHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseNXRHS HandshakeKeys{..} =
+  handshakeState
+  "NX"
+  noiseNXR
+  ""
+  (Just respStatic)
+  Nothing
+  Nothing
+  Nothing
+
+noiseKXRHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseKXRHS HandshakeKeys{..} =
+  handshakeState
+  "KX"
+  noiseKXR
+  ""
+  (Just respStatic)
+  Nothing
+  (Just (snd initStatic))
+  Nothing
+
+noiseXNRHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseXNRHS HandshakeKeys{..} =
+  handshakeState
+  "XN"
+  noiseXNR
+  ""
+  Nothing
+  Nothing
+  Nothing
+  Nothing
+
+noiseINRHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseINRHS HandshakeKeys{..} =
+  handshakeState
+  "IN"
+  noiseINR
+  ""
+  Nothing
+  Nothing
+  Nothing
+  Nothing
+
+noiseXKRHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseXKRHS HandshakeKeys{..} =
+  handshakeState
+  "XK"
+  noiseXKR
+  ""
+  (Just respStatic)
+  Nothing
+  Nothing
+  Nothing
+
+noiseIKRHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseIKRHS HandshakeKeys{..} =
+  handshakeState
+  "IK"
+  noiseIKR
+  ""
+  (Just respStatic)
+  Nothing
+  Nothing
+  Nothing
+
+noiseXERHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseXERHS HandshakeKeys{..} =
+  handshakeState
+  "XE"
+  noiseXER
+  ""
   (Just respStatic)
   (Just respEphemeral)
   Nothing
   Nothing
-  (Just noiseIER0)
 
-noiseXXHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseXXHS HandshakeKeys{..} =
+noiseIERHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseIERHS HandshakeKeys{..} =
   handshakeState
-  (makeHSN' "XX")
+  "IE"
+  noiseIER
+  ""
+  (Just respStatic)
+  (Just respEphemeral)
+  Nothing
+  Nothing
+
+noiseXXRHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseXXRHS HandshakeKeys{..} =
+  handshakeState
+  "XX"
+  noiseXXR
+  ""
   (Just respStatic)
   Nothing
   Nothing
   Nothing
-  Nothing
 
-noiseIXHS :: HandshakeKeys
-          -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
-noiseIXHS HandshakeKeys{..} =
+noiseIXRHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseIXRHS HandshakeKeys{..} =
   handshakeState
-  (makeHSN' "IX")
+  "IX"
+  noiseIXR
+  ""
   (Just respStatic)
-  Nothing
   Nothing
   Nothing
   Nothing

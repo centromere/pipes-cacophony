@@ -1,16 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module HandshakeStates where
 
-import Data.ByteString (ByteString)
-import Data.Proxy
-
-import Crypto.Noise.Descriptors
-import Crypto.Noise.Handshake
-import Crypto.Noise.Cipher
 import Crypto.Noise.Cipher.ChaChaPoly1305
 import Crypto.Noise.Curve
 import Crypto.Noise.Curve.Curve25519
-import Crypto.Noise.Hash
+import Crypto.Noise.Handshake
+import Crypto.Noise.HandshakePatterns
 import Crypto.Noise.Hash.SHA256
 import Crypto.Noise.Types
 
@@ -23,20 +18,12 @@ respStatic = curveBytesToPair . bsToSB' $ "\ETB\157\&7\DC2\252\NUL\148\172\148\1
 respEphemeral :: KeyPair Curve25519
 respEphemeral = curveBytesToPair . bsToSB' $ "<\231\151\151\180\217\146\DLEI}\160N\163iKc\162\210Y\168R\213\206&gm\169r\SUB[\\'"
 
-makeHSN :: ByteString -> ScrubbedBytes
-makeHSN hs = concatSB [p, convert hs, u, a, u, b, u, c]
-  where
-    a = curveName  (Proxy :: Proxy Curve25519)
-    b = cipherName (Proxy :: Proxy ChaChaPoly1305)
-    c = hashName   (Proxy :: Proxy SHA256)
-    u = bsToSB' "_"
-    p = bsToSB' "Noise_"
-
 noiseNNIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNNIHS =
   handshakeState
-  (makeHSN "NN")
-  Nothing
+  "NN"
+  noiseNNI
+  ""
   Nothing
   Nothing
   Nothing
@@ -45,58 +32,64 @@ noiseNNIHS =
 noiseKNIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKNIHS =
   handshakeState
-  (makeHSN "KN")
+  "KN"
+  noiseKNI
+  ""
   (Just initStatic)
   Nothing
   Nothing
   Nothing
-  (Just noiseKNI0)
 
 noiseNKIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNKIHS =
   handshakeState
-  (makeHSN "NK")
+  "NK"
+  noiseNKI
+  ""
   Nothing
   Nothing
   (Just (snd respStatic))
   Nothing
-  (Just noiseNKI0)
 
 noiseKKIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKKIHS =
   handshakeState
-  (makeHSN "KK")
+  "KK"
+  noiseKKI
+  ""
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
   Nothing
-  (Just noiseKKI0)
 
 noiseNEIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNEIHS =
   handshakeState
-  (makeHSN "NE")
+  "NE"
+  noiseNEI
+  ""
   Nothing
   Nothing
   (Just (snd respStatic))
   (Just (snd respEphemeral))
-  (Just noiseNEI0)
 
 noiseKEIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKEIHS =
   handshakeState
-  (makeHSN "KE")
+  "KE"
+  noiseKEI
+  ""
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
   (Just (snd respEphemeral))
-  (Just noiseKEI0)
 
 noiseNXIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNXIHS =
   handshakeState
-  (makeHSN "NX")
-  Nothing
+  "NX"
+  noiseNXI
+  ""
   Nothing
   Nothing
   Nothing
@@ -105,19 +98,21 @@ noiseNXIHS =
 noiseKXIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKXIHS =
   handshakeState
-  (makeHSN "KX")
+  "KX"
+  noiseKXI
+  ""
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
   Nothing
-  (Just noiseKXI0)
 
 noiseXNIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXNIHS =
   handshakeState
-  (makeHSN "XN")
+  "XN"
+  noiseXNI
+  ""
   (Just initStatic)
-  Nothing
   Nothing
   Nothing
   Nothing
@@ -125,9 +120,10 @@ noiseXNIHS =
 noiseINIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseINIHS =
   handshakeState
-  (makeHSN "IN")
+  "IN"
+  noiseINI
+  ""
   (Just initStatic)
-  Nothing
   Nothing
   Nothing
   Nothing
@@ -135,49 +131,54 @@ noiseINIHS =
 noiseXKIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXKIHS =
   handshakeState
-  (makeHSN "XK")
+  "XK"
+  noiseXKI
+  ""
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
   Nothing
-  (Just noiseXKI0)
 
 noiseIKIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseIKIHS =
   handshakeState
-  (makeHSN "IK")
+  "IK"
+  noiseIKI
+  ""
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
   Nothing
-  (Just noiseIKI0)
 
 noiseXEIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXEIHS =
   handshakeState
-  (makeHSN "XE")
+  "XE"
+  noiseXEI
+  ""
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
   (Just (snd respEphemeral))
-  (Just noiseXEI0)
 
 noiseIEIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseIEIHS =
   handshakeState
-  (makeHSN "IE")
+  "IE"
+  noiseIEI
+  ""
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
   (Just (snd respEphemeral))
-  (Just noiseIEI0)
 
 noiseXXIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXXIHS =
   handshakeState
-  (makeHSN "XX")
+  "XX"
+  noiseXXI
+  ""
   (Just initStatic)
-  Nothing
   Nothing
   Nothing
   Nothing
@@ -185,9 +186,10 @@ noiseXXIHS =
 noiseIXIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseIXIHS =
   handshakeState
-  (makeHSN "IX")
+  "IX"
+  noiseIXI
+  ""
   (Just initStatic)
-  Nothing
   Nothing
   Nothing
   Nothing
@@ -195,38 +197,42 @@ noiseIXIHS =
 noiseNIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNIHS =
   handshakeState
-  (makeHSN "N")
+  "N"
+  noiseNI
+  ""
   Nothing
   Nothing
   (Just (snd respStatic))
   Nothing
-  (Just noiseNI0)
 
 noiseKIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKIHS =
   handshakeState
-  (makeHSN "K")
+  "K"
+  noiseKI
+  ""
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
   Nothing
-  (Just noiseKI0)
 
 noiseXIHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXIHS =
   handshakeState
-  (makeHSN "X")
+  "X"
+  noiseXI
+  ""
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
   Nothing
-  (Just noiseXI0)
 
 noiseNNRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNNRHS =
   handshakeState
-  (makeHSN "NN")
-  Nothing
+  "NN"
+  noiseNNR
+  ""
   Nothing
   Nothing
   Nothing
@@ -235,59 +241,65 @@ noiseNNRHS =
 noiseKNRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKNRHS =
   handshakeState
-  (makeHSN "KN")
+  "KN"
+  noiseKNR
+  ""
   Nothing
   Nothing
   (Just (snd initStatic))
   Nothing
-  (Just noiseKNR0)
 
 noiseNKRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNKRHS =
   handshakeState
-  (makeHSN "NK")
+  "NK"
+  noiseNKR
+  ""
   (Just respStatic)
   Nothing
   Nothing
   Nothing
-  (Just noiseNKR0)
 
 noiseKKRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKKRHS =
   handshakeState
-  (makeHSN "KK")
+  "KK"
+  noiseKKR
+  ""
   (Just respStatic)
   Nothing
   (Just (snd initStatic))
   Nothing
-  (Just noiseKKR0)
 
 noiseNERHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNERHS =
   handshakeState
-  (makeHSN "NE")
+  "NE"
+  noiseNER
+  ""
   (Just respStatic)
   (Just respEphemeral)
   Nothing
   Nothing
-  (Just noiseNER0)
 
 noiseKERHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKERHS =
   handshakeState
-  (makeHSN "KE")
+  "KE"
+  noiseKER
+  ""
   (Just respStatic)
   (Just respEphemeral)
   (Just (snd initStatic))
   Nothing
-  (Just noiseKER0)
 
 noiseNXRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNXRHS =
   handshakeState
-  (makeHSN "NX")
+  "NX"
+  noiseNXR
+  ""
   (Just respStatic)
-  Nothing
   Nothing
   Nothing
   Nothing
@@ -295,18 +307,20 @@ noiseNXRHS =
 noiseKXRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKXRHS =
   handshakeState
-  (makeHSN "KX")
+  "KX"
+  noiseKXR
+  ""
   (Just respStatic)
   Nothing
   (Just (snd initStatic))
   Nothing
-  (Just noiseKXR0)
 
 noiseXNRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXNRHS =
   handshakeState
-  (makeHSN "XN")
-  Nothing
+  "XN"
+  noiseXNR
+  ""
   Nothing
   Nothing
   Nothing
@@ -315,8 +329,9 @@ noiseXNRHS =
 noiseINRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseINRHS =
   handshakeState
-  (makeHSN "IN")
-  Nothing
+  "IN"
+  noiseINR
+  ""
   Nothing
   Nothing
   Nothing
@@ -325,49 +340,54 @@ noiseINRHS =
 noiseXKRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXKRHS =
   handshakeState
-  (makeHSN "XK")
+  "XK"
+  noiseXKR
+  ""
   (Just respStatic)
   Nothing
   Nothing
   Nothing
-  (Just noiseXKR0)
 
 noiseIKRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseIKRHS =
   handshakeState
-  (makeHSN "IK")
+  "IK"
+  noiseIKR
+  ""
   (Just respStatic)
   Nothing
   Nothing
   Nothing
-  (Just noiseIKR0)
 
 noiseXERHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXERHS =
   handshakeState
-  (makeHSN "XE")
+  "XE"
+  noiseXER
+  ""
   (Just respStatic)
   (Just respEphemeral)
   Nothing
   Nothing
-  (Just noiseXER0)
 
 noiseIERHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseIERHS =
   handshakeState
-  (makeHSN "IE")
+  "IE"
+  noiseIER
+  ""
   (Just respStatic)
   (Just respEphemeral)
   Nothing
   Nothing
-  (Just noiseIER0)
 
 noiseXXRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXXRHS =
   handshakeState
-  (makeHSN "XX")
+  "XX"
+  noiseXXR
+  ""
   (Just respStatic)
-  Nothing
   Nothing
   Nothing
   Nothing
@@ -375,9 +395,10 @@ noiseXXRHS =
 noiseIXRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseIXRHS =
   handshakeState
-  (makeHSN "IX")
+  "IX"
+  noiseIXR
+  ""
   (Just respStatic)
-  Nothing
   Nothing
   Nothing
   Nothing
@@ -385,29 +406,32 @@ noiseIXRHS =
 noiseNRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNRHS =
   handshakeState
-  (makeHSN "N")
+  "N"
+  noiseNR
+  ""
   (Just respStatic)
   Nothing
   Nothing
   Nothing
-  (Just noiseNR0)
 
 noiseKRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKRHS =
   handshakeState
-  (makeHSN "K")
+  "K"
+  noiseKR
+  ""
   (Just respStatic)
   Nothing
   (Just (snd initStatic))
   Nothing
-  (Just noiseKR0)
 
 noiseXRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXRHS =
   handshakeState
-  (makeHSN "X")
+  "X"
+  noiseXR
+  ""
   (Just respStatic)
   Nothing
   Nothing
   Nothing
-  (Just noiseXR0)
