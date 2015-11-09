@@ -1,5 +1,5 @@
 name:          pipes-cacophony
-version:       0.1.0
+version:       0.1.1
 synopsis:      Pipes for Noise-secured network connections.
 license:       PublicDomain
 license-file:  LICENSE
@@ -45,7 +45,7 @@ flag llvm
 
 library
   build-depends:
-    base >=4.8 && <4.9,
+    base >=4.8 && <5,
     bytestring,
     cacophony,
     pipes
@@ -71,7 +71,7 @@ executable echo-server
       aeson,
       async,
       auto-update,
-      base >=4.8 && <4.9,
+      base >=4.8 && <5,
       base64-bytestring,
       bytestring,
       cacophony,
@@ -99,7 +99,7 @@ executable echo-client
     build-depends:
       aeson,
       async,
-      base >=4.8 && <4.9,
+      base >=4.8 && <5,
       base64-bytestring,
       bytestring,
       cacophony,
@@ -128,7 +128,7 @@ test-suite test-pipes-cacophony
 
   build-depends:
     async,
-    base >= 4.8 && < 4.9,
+    base >=4.8 && <5,
     bytestring,
     cacophony,
     mtl,
@@ -156,5 +156,5 @@ test-suite hlint
     buildable: False
   else
     build-depends:
-      base >= 4.8 && < 4.9,
+      base >=4.8 && <5,
       hlint
