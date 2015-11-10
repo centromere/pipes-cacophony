@@ -127,7 +127,7 @@ type ClientReceiver  = Producer' ByteString IO ()
 type ClientSender    = Consumer' ByteString IO ()
 
 makeHSN :: Text -> Text
-makeHSN ht = T.concat ["Noise_", ht, "_25519_ChaChaPoly1305_SHA256"]
+makeHSN ht = T.concat ["Noise_", ht, "_25519_ChaChaPoly_SHA256"]
 
 processHandshake :: HandshakeKeys
                  -> (ClientSender, ClientReceiver)
