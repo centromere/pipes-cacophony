@@ -24,6 +24,7 @@ noiseNNIHS =
   "NN"
   noiseNNI
   ""
+  "cacophony"
   Nothing
   Nothing
   Nothing
@@ -35,6 +36,7 @@ noiseKNIHS =
   "KN"
   noiseKNI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   Nothing
@@ -46,6 +48,7 @@ noiseNKIHS =
   "NK"
   noiseNKI
   ""
+  "cacophony"
   Nothing
   Nothing
   (Just (snd respStatic))
@@ -57,6 +60,7 @@ noiseKKIHS =
   "KK"
   noiseKKI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
@@ -68,6 +72,7 @@ noiseNEIHS =
   "NE"
   noiseNEI
   ""
+  "cacophony"
   Nothing
   Nothing
   (Just (snd respStatic))
@@ -79,6 +84,7 @@ noiseKEIHS =
   "KE"
   noiseKEI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
@@ -90,6 +96,7 @@ noiseNXIHS =
   "NX"
   noiseNXI
   ""
+  "cacophony"
   Nothing
   Nothing
   Nothing
@@ -101,6 +108,7 @@ noiseKXIHS =
   "KX"
   noiseKXI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   Nothing
@@ -112,6 +120,7 @@ noiseXNIHS =
   "XN"
   noiseXNI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   Nothing
@@ -123,6 +132,7 @@ noiseINIHS =
   "IN"
   noiseINI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   Nothing
@@ -134,6 +144,7 @@ noiseXKIHS =
   "XK"
   noiseXKI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
@@ -145,6 +156,7 @@ noiseIKIHS =
   "IK"
   noiseIKI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
@@ -156,6 +168,7 @@ noiseXEIHS =
   "XE"
   noiseXEI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
@@ -167,6 +180,7 @@ noiseIEIHS =
   "IE"
   noiseIEI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
@@ -178,6 +192,7 @@ noiseXXIHS =
   "XX"
   noiseXXI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   Nothing
@@ -189,6 +204,7 @@ noiseIXIHS =
   "IX"
   noiseIXI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   Nothing
@@ -200,6 +216,7 @@ noiseNIHS =
   "N"
   noiseNI
   ""
+  "cacophony"
   Nothing
   Nothing
   (Just (snd respStatic))
@@ -211,6 +228,7 @@ noiseKIHS =
   "K"
   noiseKI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
@@ -222,6 +240,7 @@ noiseXIHS =
   "X"
   noiseXI
   ""
+  "cacophony"
   (Just initStatic)
   Nothing
   (Just (snd respStatic))
@@ -233,6 +252,7 @@ noiseNNRHS =
   "NN"
   noiseNNR
   ""
+  "cacophony"
   Nothing
   Nothing
   Nothing
@@ -244,6 +264,7 @@ noiseKNRHS =
   "KN"
   noiseKNR
   ""
+  "cacophony"
   Nothing
   Nothing
   (Just (snd initStatic))
@@ -255,6 +276,7 @@ noiseNKRHS =
   "NK"
   noiseNKR
   ""
+  "cacophony"
   (Just respStatic)
   Nothing
   Nothing
@@ -266,6 +288,7 @@ noiseKKRHS =
   "KK"
   noiseKKR
   ""
+  "cacophony"
   (Just respStatic)
   Nothing
   (Just (snd initStatic))
@@ -277,6 +300,7 @@ noiseNERHS =
   "NE"
   noiseNER
   ""
+  "cacophony"
   (Just respStatic)
   (Just respEphemeral)
   Nothing
@@ -288,6 +312,7 @@ noiseKERHS =
   "KE"
   noiseKER
   ""
+  "cacophony"
   (Just respStatic)
   (Just respEphemeral)
   (Just (snd initStatic))
@@ -299,6 +324,7 @@ noiseNXRHS =
   "NX"
   noiseNXR
   ""
+  "cacophony"
   (Just respStatic)
   Nothing
   Nothing
@@ -310,6 +336,7 @@ noiseKXRHS =
   "KX"
   noiseKXR
   ""
+  "cacophony"
   (Just respStatic)
   Nothing
   (Just (snd initStatic))
@@ -321,6 +348,7 @@ noiseXNRHS =
   "XN"
   noiseXNR
   ""
+  "cacophony"
   Nothing
   Nothing
   Nothing
@@ -332,6 +360,7 @@ noiseINRHS =
   "IN"
   noiseINR
   ""
+  "cacophony"
   Nothing
   Nothing
   Nothing
@@ -343,6 +372,7 @@ noiseXKRHS =
   "XK"
   noiseXKR
   ""
+  "cacophony"
   (Just respStatic)
   Nothing
   Nothing
@@ -354,6 +384,7 @@ noiseIKRHS =
   "IK"
   noiseIKR
   ""
+  "cacophony"
   (Just respStatic)
   Nothing
   Nothing
@@ -365,6 +396,7 @@ noiseXERHS =
   "XE"
   noiseXER
   ""
+  "cacophony"
   (Just respStatic)
   (Just respEphemeral)
   Nothing
@@ -376,6 +408,7 @@ noiseIERHS =
   "IE"
   noiseIER
   ""
+  "cacophony"
   (Just respStatic)
   (Just respEphemeral)
   Nothing
@@ -387,6 +420,7 @@ noiseXXRHS =
   "XX"
   noiseXXR
   ""
+  "cacophony"
   (Just respStatic)
   Nothing
   Nothing
@@ -398,6 +432,7 @@ noiseIXRHS =
   "IX"
   noiseIXR
   ""
+  "cacophony"
   (Just respStatic)
   Nothing
   Nothing
@@ -409,6 +444,7 @@ noiseNRHS =
   "N"
   noiseNR
   ""
+  "cacophony"
   (Just respStatic)
   Nothing
   Nothing
@@ -420,6 +456,7 @@ noiseKRHS =
   "K"
   noiseKR
   ""
+  "cacophony"
   (Just respStatic)
   Nothing
   (Just (snd initStatic))
@@ -431,6 +468,7 @@ noiseXRHS =
   "X"
   noiseXR
   ""
+  "cacophony"
   (Just respStatic)
   Nothing
   Nothing
