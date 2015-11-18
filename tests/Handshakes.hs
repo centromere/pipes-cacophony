@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, RankNTypes #-}
-module Handshake where
+module Handshakes where
 
 import Control.Concurrent.Async (concurrently)
 import Control.Concurrent.MVar  (MVar, newEmptyMVar, takeMVar,

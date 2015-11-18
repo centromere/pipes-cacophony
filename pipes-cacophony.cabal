@@ -139,7 +139,7 @@ test-suite properties
     tasty-quickcheck
 
   other-modules:
-    Handshake,
+    Handshakes,
     HandshakeStates,
     Imports,
     Instances
