@@ -55,7 +55,7 @@ main = do
   logHandle <- openLog "debug.log"
   au <- mkAutoUpdate defaultUpdateSettings { updateAction = getDateTime }
   let exLogger   = logException logHandle au
-      preshared' = if length preshared > 0 then
+      preshared' = if not (null preshared) then
                      Just . Plaintext . bsToSB' . pack $ preshared
                    else
                      Nothing

@@ -45,7 +45,7 @@ main = do
   is <- processPrivateKey "init_static"
   [rs, re] <- forM ["resp_static.pub", "resp_ephemeral.pub"] readPublicKey
 
-  let preshared' = if length preshared > 0 then
+  let preshared' = if not (null preshared) then
                      Just . Plaintext . bsToSB' . pack $ preshared
                    else
                      Nothing
