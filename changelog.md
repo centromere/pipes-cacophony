@@ -1,3 +1,11 @@
+# 0.1.2
+
+* Added examples to Travis config
+
+* Brought unit tests and examples up to date with cacophony API changes
+
+* Improved examples
+
 # 0.1.1
 
 * Enabled test verification on sdist package (for unit testing)
