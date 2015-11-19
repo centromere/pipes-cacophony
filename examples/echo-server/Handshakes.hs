@@ -220,9 +220,9 @@ mkHandshakePipe ht hks csmv =
 noiseNNRHS :: HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNNRHS =
   handshakeState
-  "NN"
   noiseNNR
   ""
+  (Just "cacophony")
   Nothing
   Nothing
   Nothing
@@ -232,9 +232,9 @@ noiseKNRHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKNRHS HandshakeKeys{..} =
   handshakeState
-  "KN"
   noiseKNR
   ""
+  (Just "cacophony")
   Nothing
   Nothing
   (Just initStatic)
@@ -244,9 +244,9 @@ noiseNKRHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNKRHS HandshakeKeys{..} =
   handshakeState
-  "NK"
   noiseNKR
   ""
+  (Just "cacophony")
   (Just respStatic)
   Nothing
   Nothing
@@ -256,9 +256,9 @@ noiseKKRHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKKRHS HandshakeKeys{..} =
   handshakeState
-  "KK"
   noiseKKR
   ""
+  (Just "cacophony")
   (Just respStatic)
   Nothing
   (Just initStatic)
@@ -268,9 +268,9 @@ noiseNERHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNERHS HandshakeKeys{..} =
   handshakeState
-  "NE"
   noiseNER
   ""
+  (Just "cacophony")
   (Just respStatic)
   (Just respEphemeral)
   Nothing
@@ -280,9 +280,9 @@ noiseKERHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKERHS HandshakeKeys{..} =
   handshakeState
-  "KE"
   noiseKER
   ""
+  (Just "cacophony")
   (Just respStatic)
   (Just respEphemeral)
   (Just initStatic)
@@ -292,9 +292,9 @@ noiseNXRHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNXRHS HandshakeKeys{..} =
   handshakeState
-  "NX"
   noiseNXR
   ""
+  (Just "cacophony")
   (Just respStatic)
   Nothing
   Nothing
@@ -304,9 +304,9 @@ noiseKXRHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKXRHS HandshakeKeys{..} =
   handshakeState
-  "KX"
   noiseKXR
   ""
+  (Just "cacophony")
   (Just respStatic)
   Nothing
   (Just initStatic)
@@ -316,9 +316,9 @@ noiseXNRHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXNRHS HandshakeKeys{..} =
   handshakeState
-  "XN"
   noiseXNR
   ""
+  (Just "cacophony")
   Nothing
   Nothing
   Nothing
@@ -328,9 +328,9 @@ noiseINRHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseINRHS HandshakeKeys{..} =
   handshakeState
-  "IN"
   noiseINR
   ""
+  (Just "cacophony")
   Nothing
   Nothing
   Nothing
@@ -340,9 +340,9 @@ noiseXKRHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXKRHS HandshakeKeys{..} =
   handshakeState
-  "XK"
   noiseXKR
   ""
+  (Just "cacophony")
   (Just respStatic)
   Nothing
   Nothing
@@ -352,9 +352,9 @@ noiseIKRHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseIKRHS HandshakeKeys{..} =
   handshakeState
-  "IK"
   noiseIKR
   ""
+  (Just "cacophony")
   (Just respStatic)
   Nothing
   Nothing
@@ -364,9 +364,9 @@ noiseXERHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXERHS HandshakeKeys{..} =
   handshakeState
-  "XE"
   noiseXER
   ""
+  (Just "cacophony")
   (Just respStatic)
   (Just respEphemeral)
   Nothing
@@ -376,9 +376,9 @@ noiseIERHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseIERHS HandshakeKeys{..} =
   handshakeState
-  "IE"
   noiseIER
   ""
+  (Just "cacophony")
   (Just respStatic)
   (Just respEphemeral)
   Nothing
@@ -388,9 +388,9 @@ noiseXXRHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXXRHS HandshakeKeys{..} =
   handshakeState
-  "XX"
   noiseXXR
   ""
+  (Just "cacophony")
   (Just respStatic)
   Nothing
   Nothing
@@ -400,9 +400,9 @@ noiseIXRHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseIXRHS HandshakeKeys{..} =
   handshakeState
-  "IX"
   noiseIXR
   ""
+  (Just "cacophony")
   (Just respStatic)
   Nothing
   Nothing
