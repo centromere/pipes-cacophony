@@ -6,7 +6,7 @@ import Control.AutoUpdate       (mkAutoUpdate, defaultUpdateSettings, updateActi
 import Control.Exception        (SomeException, displayException, handle)
 import Data.Aeson               (encode, object, (.=))
 import Data.ByteString          (ByteString, readFile, writeFile)
-import Data.ByteString.Char8    (unpack)
+import Data.ByteString.Char8    (pack, unpack)
 import Data.ByteString.Lazy.Char8 (append)
 import Data.Traversable         (forM)
 import Data.UnixTime            (formatUnixTime, fromEpochTime)
@@ -18,6 +18,7 @@ import System.Log.FastLogger    (toLogStr, pushLogStr, LoggerSet, newFileLoggerS
 import System.Posix             (epochTime)
 import System.Posix.Files       (setFileCreationMask)
 
+import Crypto.Noise.Cipher      (Plaintext(..))
 import Crypto.Noise.Curve
 import Crypto.Noise.Curve.Curve25519
 import Crypto.Noise.Types       (bsToSB', sbToBS')
@@ -47,14 +48,18 @@ processPrivateKey f = do
 
 main :: IO ()
 main = do
-  [port] <- getArgs
+  [port, preshared] <- getArgs
   [rs, re] <- forM ["resp_static", "resp_ephemeral"] processPrivateKey
   is <- readPublicKey "init_static.pub"
 
   logHandle <- openLog "debug.log"
   au <- mkAutoUpdate defaultUpdateSettings { updateAction = getDateTime }
-  let exLogger = logException logHandle au
-      keys     = HandshakeKeys is rs re
+  let exLogger   = logException logHandle au
+      preshared' = if length preshared > 0 then
+                     Just . Plaintext . bsToSB' . pack $ preshared
+                   else
+                     Nothing
+      keys       = HandshakeKeys preshared' is rs re
 
   serve HostAny port $ \(s, ip) -> do
     let clientReceiver = fromSocketTimeout 120000000 s 4096

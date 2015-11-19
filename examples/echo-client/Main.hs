@@ -3,12 +3,14 @@
 module Main where
 
 import Data.ByteString          (readFile, writeFile)
+import Data.ByteString.Char8    (pack)
 import Data.Traversable         (forM)
 import Pipes.Network.TCP
 import Prelude                  hiding (readFile, writeFile)
 import System.Directory         (doesFileExist)
 import System.Environment       (getArgs)
 
+import Crypto.Noise.Cipher      (Plaintext(..))
 import Crypto.Noise.Curve
 import Crypto.Noise.Curve.Curve25519
 import Crypto.Noise.Types       (bsToSB', sbToBS')
@@ -38,12 +40,16 @@ processPrivateKey f = do
 
 main :: IO ()
 main = do
-  [host, port, htStr] <- getArgs
+  [host, port, htStr, preshared] <- getArgs
 
   is <- processPrivateKey "init_static"
   [rs, re] <- forM ["resp_static.pub", "resp_ephemeral.pub"] readPublicKey
 
-  let keys = HandshakeKeys is rs re
+  let preshared' = if length preshared > 0 then
+                     Just . Plaintext . bsToSB' . pack $ preshared
+                   else
+                     Nothing
+      keys = HandshakeKeys preshared' is rs re
       ht = case htStr of
         "NN" -> NoiseNN
         "KN" -> NoiseKN
