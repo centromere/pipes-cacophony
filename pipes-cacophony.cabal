@@ -88,6 +88,9 @@ executable echo-server
   else
     buildable: False
 
+  other-modules:
+    Handshakes
+
   ghc-options:      -threaded -rtsopts -with-rtsopts=-N -Wall -fwarn-tabs
 
 executable echo-client
@@ -113,6 +116,9 @@ executable echo-client
       text
   else
     buildable: False
+
+  other-modules:
+    Handshakes
 
   ghc-options:      -threaded -rtsopts -with-rtsopts=-N -Wall -fwarn-tabs
 
