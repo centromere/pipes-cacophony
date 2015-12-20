@@ -66,22 +66,22 @@ data HandshakeType = NoiseNN
                    | NoiseIX
 
 instance ToJSON HandshakeType where
-  toJSON (NoiseNN) = String . makeHSN $ "NN"
-  toJSON (NoiseKN) = String . makeHSN $ "KN"
-  toJSON (NoiseNK) = String . makeHSN $ "NK"
-  toJSON (NoiseKK) = String . makeHSN $ "KK"
-  toJSON (NoiseNE) = String . makeHSN $ "NE"
-  toJSON (NoiseKE) = String . makeHSN $ "KE"
-  toJSON (NoiseNX) = String . makeHSN $ "NX"
-  toJSON (NoiseKX) = String . makeHSN $ "KX"
-  toJSON (NoiseXN) = String . makeHSN $ "XN"
-  toJSON (NoiseIN) = String . makeHSN $ "IN"
-  toJSON (NoiseXK) = String . makeHSN $ "XK"
-  toJSON (NoiseIK) = String . makeHSN $ "IK"
-  toJSON (NoiseXE) = String . makeHSN $ "XE"
-  toJSON (NoiseIE) = String . makeHSN $ "IE"
-  toJSON (NoiseXX) = String . makeHSN $ "XX"
-  toJSON (NoiseIX) = String . makeHSN $ "IX"
+  toJSON NoiseNN = String . makeHSN $ "NN"
+  toJSON NoiseKN = String . makeHSN $ "KN"
+  toJSON NoiseNK = String . makeHSN $ "NK"
+  toJSON NoiseKK = String . makeHSN $ "KK"
+  toJSON NoiseNE = String . makeHSN $ "NE"
+  toJSON NoiseKE = String . makeHSN $ "KE"
+  toJSON NoiseNX = String . makeHSN $ "NX"
+  toJSON NoiseKX = String . makeHSN $ "KX"
+  toJSON NoiseXN = String . makeHSN $ "XN"
+  toJSON NoiseIN = String . makeHSN $ "IN"
+  toJSON NoiseXK = String . makeHSN $ "XK"
+  toJSON NoiseIK = String . makeHSN $ "IK"
+  toJSON NoiseXE = String . makeHSN $ "XE"
+  toJSON NoiseIE = String . makeHSN $ "IE"
+  toJSON NoiseXX = String . makeHSN $ "XX"
+  toJSON NoiseIX = String . makeHSN $ "IX"
 
 data InitialMessage =
   InitialMessage { handshakeType :: HandshakeType

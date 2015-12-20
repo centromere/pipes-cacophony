@@ -1,3 +1,7 @@
+# 0.1.3
+
+* Performed linting
+
 # 0.1.2
 
 * Added examples to Travis config
