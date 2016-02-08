@@ -18,10 +18,9 @@ import System.Log.FastLogger    (toLogStr, pushLogStr, LoggerSet, newFileLoggerS
 import System.Posix             (epochTime)
 import System.Posix.Files       (setFileCreationMask)
 
-import Crypto.Noise.Cipher      (Plaintext(..))
 import Crypto.Noise.Curve
 import Crypto.Noise.Curve.Curve25519
-import Crypto.Noise.Types       (bsToSB', sbToBS')
+import Crypto.Noise.Types       (Plaintext(..), bsToSB', sbToBS')
 
 import Handshakes
 
@@ -62,13 +61,10 @@ main = do
       keys       = HandshakeKeys preshared' is rs re
 
   serve HostAny port $ \(s, ip) -> do
-    let clientReceiver = fromSocketTimeout 120000000 s 4096
-        clientSender   = toSocket s
-
     logMsg logHandle au ip "connection established"
     handle (exLogger ip) $ processHandshake
                            keys
-                           (clientReceiver, clientSender)
+                           s
                            (logMsg logHandle au ip)
     logMsg logHandle au ip "connection closed"
 

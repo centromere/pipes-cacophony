@@ -1,4 +1,6 @@
-# 0.1.3
+# 0.2.0
+
+* Removed HandshakePipe due to cacophony API changes
 
 * Performed linting
 

@@ -1,5 +1,5 @@
 name:          pipes-cacophony
-version:       0.1.3
+version:       0.2.0
 synopsis:      Pipes for Noise-secured network connections.
 license:       PublicDomain
 license-file:  LICENSE
@@ -74,7 +74,7 @@ executable echo-server
       base >=4.8 && <5,
       base64-bytestring,
       bytestring,
-      cacophony,
+      cacophony >=0.5,
       directory,
       fast-logger,
       pipes,
@@ -124,31 +124,6 @@ executable echo-client
 
 --------------------------------------------------------------------------------
 -- TESTS
-
-test-suite properties
-  type:             exitcode-stdio-1.0
-  main-is:          properties.hs
-  ghc-options:      -Wall -fwarn-tabs
-  hs-source-dirs:   tests
-  default-language: Haskell2010
-
-  build-depends:
-    async,
-    base >=4.8 && <5,
-    bytestring,
-    cacophony,
-    mtl,
-    pipes,
-    pipes-cacophony,
-    QuickCheck,
-    tasty,
-    tasty-quickcheck
-
-  other-modules:
-    Handshakes,
-    HandshakeStates,
-    Imports,
-    Instances
 
 test-suite hlint
   type:             exitcode-stdio-1.0

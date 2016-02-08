@@ -10,10 +10,9 @@ import Prelude                  hiding (readFile, writeFile)
 import System.Directory         (doesFileExist)
 import System.Environment       (getArgs)
 
-import Crypto.Noise.Cipher      (Plaintext(..))
 import Crypto.Noise.Curve
 import Crypto.Noise.Curve.Curve25519
-import Crypto.Noise.Types       (bsToSB', sbToBS')
+import Crypto.Noise.Types       (Plaintext(..), bsToSB', sbToBS')
 
 import Handshakes
 
@@ -67,10 +66,7 @@ main = do
         "IE" -> NoiseIE
         "XX" -> NoiseXX
         "IX" -> NoiseIX
+        "XR" -> NoiseXR
         _    -> undefined
 
-  connect host port $ \(s, _) -> do
-    let clientSender = toSocket s
-        clientReceiver = fromSocketTimeout 120000000 s 4096
-
-    processHandshake keys (clientSender, clientReceiver) ht
+  connect host port $ \(s, _) -> processHandshake keys s ht

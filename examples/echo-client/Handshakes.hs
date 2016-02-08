@@ -8,29 +8,32 @@ module Handshakes
   ) where
 
 import Control.Concurrent.Async (race_)
-import Control.Concurrent.MVar  (MVar, newEmptyMVar)
+import Control.Concurrent.MVar  (MVar, newEmptyMVar, putMVar)
 import Control.Exception        (Exception, throw, throwIO)
+import Control.Monad            (forever)
 import Data.Aeson               (ToJSON, FromJSON, parseJSON, (.:),
                                  Value(..), (.=), toJSON, object, withObject)
 import Data.ByteString          (ByteString)
 import qualified Data.ByteString.Base64 as B64 (encode, decode)
+import Data.Maybe               (fromJust)
 import Data.Text                (Text)
 import Data.Text.Encoding       (encodeUtf8, decodeUtf8)
 import qualified Data.Text as T (concat)
 import Data.Typeable            (Typeable)
 import GHC.Generics
 import Pipes
-import Pipes.Aeson
+import Pipes.Aeson.Unchecked
+import Pipes.Network.TCP
 import Pipes.Parse
 import qualified Pipes.ByteString as P
 
 import Crypto.Noise.Handshake
 import Crypto.Noise.HandshakePatterns
-import Crypto.Noise.Cipher
 import Crypto.Noise.Cipher.ChaChaPoly1305
 import Crypto.Noise.Curve
 import Crypto.Noise.Curve.Curve25519
 import Crypto.Noise.Hash.SHA256
+import Crypto.Noise.Types       (Plaintext(..))
 
 import Pipes.Noise
 
@@ -64,6 +67,7 @@ data HandshakeType = NoiseNN
                    | NoiseIE
                    | NoiseXX
                    | NoiseIX
+                   | NoiseXR
 
 instance ToJSON HandshakeType where
   toJSON NoiseNN = String . makeHSN $ "NN"
@@ -82,6 +86,7 @@ instance ToJSON HandshakeType where
   toJSON NoiseIE = String . makeHSN $ "IE"
   toJSON NoiseXX = String . makeHSN $ "XX"
   toJSON NoiseIX = String . makeHSN $ "IX"
+  toJSON NoiseXR = String . makeHSN $ "XR"
 
 data InitialMessage =
   InitialMessage { handshakeType :: HandshakeType
@@ -131,278 +136,298 @@ type ClientSender    = Consumer' ByteString IO ()
 makeHSN :: Text -> Text
 makeHSN ht = T.concat ["Noise_", ht, "_25519_ChaChaPoly_SHA256"]
 
+writeSocket :: ClientSender
+            -> ByteString
+            -> IO ()
+writeSocket cs msg = runEffect $ (encode . HandshakeMessage) msg >-> cs
+
+readSocket :: ClientReceiver
+           -> IO ByteString
+readSocket cr = do
+  mer <- evalStateT decode cr
+  case fromJust mer of
+    Left e -> throwIO e
+    Right (HandshakeMessage r) -> return r
+
 processHandshake :: HandshakeKeys
-                 -> (ClientSender, ClientReceiver)
+                 -> Socket
                  -> HandshakeType
                  -> IO ()
-processHandshake hks (cs, cr) ht = do
-  csmv <- newEmptyMVar
+processHandshake hks s ht = do
+  let clientSender = toSocket s
+      clientReceiver = fromSocketTimeout 120000000 s 4096
 
-  let im  = InitialMessage ht
-      imo = case toJSON im of
-        (Object o) -> o
-        _          -> undefined
+  csmv <- newEmptyMVar :: IO (MVar (CipherStatePair ChaChaPoly1305))
 
-  runEffect $ encodeObject imo >-> cs
+  runEffect $ (encode . InitialMessage) ht >-> clientSender
 
-  runEffect $ cr >-> deserializeHM >-> mkHandshakePipe ht hks csmv >-> serializeHM >-> cs
+  let hc = HandshakeCallbacks (writeSocket clientSender)
+                              (readSocket clientReceiver)
+                              (\_ -> return ())
+                              (return "")
+  cs <- runHandshake (mkHandshakePipe ht hks) hc
+  putMVar csmv cs
 
   putStrLn "Handshake complete"
 
-  race_ (runEffect (P.stdin >-> messageEncryptPipe csmv >-> serializeM >-> cs))
-        (runEffect (cr >-> deserializeM >-> messageDecryptPipe csmv >-> P.stdout))
-
-deserializeHM :: Pipe ByteString ByteString IO ()
-deserializeHM = parseForever_ decode >-> grabResult
-  where
-    grabResult = do
-      mer <- await
-      case mer of
-        Left e -> lift $ throwIO e
-        Right (HandshakeMessage r) -> yield r
-      grabResult
-
-serializeHM :: Pipe ByteString ByteString IO ()
-serializeHM = encodeResult >-> for cat encodeObject
-  where
-    encodeResult = do
-      hm <- await
-      case toJSON . HandshakeMessage $ hm of
-        (Object o) -> yield o
-        _          -> undefined
-      encodeResult
+  race_ (runEffect (P.stdin >-> messageEncryptPipe csmv >-> serializeM >-> clientSender))
+        (runEffect (clientReceiver >-> deserializeM >-> messageDecryptPipe csmv >-> P.stdout))
 
 deserializeM :: Pipe ByteString ByteString IO ()
 deserializeM = parseForever_ decode >-> grabResult
   where
-    grabResult = do
+    grabResult = forever $ do
       mer <- await
       case mer of
         Left e -> lift $ throwIO e
         Right (Message r) -> yield r
-      grabResult
 
 serializeM :: Pipe ByteString ByteString IO ()
-serializeM = encodeResult >-> for cat encodeObject
+serializeM = encodeResult >-> for cat encode
   where
-    encodeResult = do
-      m <- await
-      case toJSON . Message $ m of
-        (Object o) -> yield o
-        _          -> undefined
-      encodeResult
+    encodeResult = forever $ do
+      m <- Message <$> await
+      yield m
 
 mkHandshakePipe :: HandshakeType
                 -> HandshakeKeys
-                -> MVar (CipherStatePair ChaChaPoly1305)
-                -> HandshakePipe IO ()
-mkHandshakePipe ht hks csmv =
+                -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+mkHandshakePipe ht hks =
   case ht of
-    NoiseNN -> noiseNNIPipe (noiseNNIHS hks) csmv
-    NoiseKN -> noiseKNIPipe (noiseKNIHS hks) csmv
-    NoiseNK -> noiseNKIPipe (noiseNKIHS hks) csmv
-    NoiseKK -> noiseKKIPipe (noiseKKIHS hks) csmv
-    NoiseNE -> noiseNEIPipe (noiseNEIHS hks) csmv
-    NoiseKE -> noiseKEIPipe (noiseKEIHS hks) csmv
-    NoiseNX -> noiseNXIPipe (noiseNXIHS hks) csmv
-    NoiseKX -> noiseKXIPipe (noiseKXIHS hks) csmv
-    NoiseXN -> noiseXNIPipe (noiseXNIHS hks) csmv
-    NoiseIN -> noiseINIPipe (noiseINIHS hks) csmv
-    NoiseXK -> noiseXKIPipe (noiseXKIHS hks) csmv
-    NoiseIK -> noiseIKIPipe (noiseIKIHS hks) csmv
-    NoiseXE -> noiseXEIPipe (noiseXEIHS hks) csmv
-    NoiseIE -> noiseIEIPipe (noiseIEIHS hks) csmv
-    NoiseXX -> noiseXXIPipe (noiseXXIHS hks) csmv
-    NoiseIX -> noiseIXIPipe (noiseIXIHS hks) csmv
+    NoiseNN -> noiseNNIHS hks
+    NoiseKN -> noiseKNIHS hks
+    NoiseNK -> noiseNKIHS hks
+    NoiseKK -> noiseKKIHS hks
+    NoiseNE -> noiseNEIHS hks
+    NoiseKE -> noiseKEIHS hks
+    NoiseNX -> noiseNXIHS hks
+    NoiseKX -> noiseKXIHS hks
+    NoiseXN -> noiseXNIHS hks
+    NoiseIN -> noiseINIHS hks
+    NoiseXK -> noiseXKIHS hks
+    NoiseIK -> noiseIKIHS hks
+    NoiseXE -> noiseXEIHS hks
+    NoiseIE -> noiseIEIHS hks
+    NoiseXX -> noiseXXIHS hks
+    NoiseIX -> noiseIXIHS hks
+    NoiseXR -> noiseXRIHS hks
 
 noiseNNIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNNIHS HandshakeKeys{..} =
-  handshakeState
-  noiseNNI
+  handshakeState $ HandshakeStateParams
+  noiseNN
   ""
   psk
   Nothing
   Nothing
   Nothing
   Nothing
+  True
 
 noiseKNIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKNIHS HandshakeKeys{..} =
-  handshakeState
-  noiseKNI
+  handshakeState $ HandshakeStateParams
+  noiseKN
   ""
   psk
   (Just initStatic)
   Nothing
   Nothing
   Nothing
+  True
 
 noiseNKIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNKIHS HandshakeKeys{..} =
-  handshakeState
-  noiseNKI
+  handshakeState $ HandshakeStateParams
+  noiseNK
   ""
   psk
   Nothing
   Nothing
   (Just respStatic)
   Nothing
+  True
 
 noiseKKIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKKIHS HandshakeKeys{..} =
-  handshakeState
-  noiseKKI
+  handshakeState $ HandshakeStateParams
+  noiseKK
   ""
   psk
   (Just initStatic)
   Nothing
   (Just respStatic)
   Nothing
+  True
 
 noiseNEIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNEIHS HandshakeKeys{..} =
-  handshakeState
-  noiseNEI
+  handshakeState $ HandshakeStateParams
+  noiseNE
   ""
   psk
   Nothing
   Nothing
   (Just respStatic)
   (Just respEphemeral)
+  True
 
 noiseKEIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKEIHS HandshakeKeys{..} =
-  handshakeState
-  noiseKEI
+  handshakeState $ HandshakeStateParams
+  noiseKE
   ""
   psk
   (Just initStatic)
   Nothing
   (Just respStatic)
   (Just respEphemeral)
+  True
 
 noiseNXIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseNXIHS HandshakeKeys{..} =
-  handshakeState
-  noiseNXI
+  handshakeState $ HandshakeStateParams
+  noiseNX
   ""
   psk
   Nothing
   Nothing
   Nothing
   Nothing
+  True
 
 noiseKXIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseKXIHS HandshakeKeys{..} =
-  handshakeState
-  noiseKXI
+  handshakeState $ HandshakeStateParams
+  noiseKX
   ""
   psk
   (Just initStatic)
   Nothing
   (Just respStatic)
   Nothing
+  True
 
 noiseXNIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXNIHS HandshakeKeys{..} =
-  handshakeState
-  noiseXNI
+  handshakeState $ HandshakeStateParams
+  noiseXN
   ""
   psk
   (Just initStatic)
   Nothing
   Nothing
   Nothing
+  True
 
 noiseINIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseINIHS HandshakeKeys{..} =
-  handshakeState
-  noiseINI
+  handshakeState $ HandshakeStateParams
+  noiseIN
   ""
   psk
   (Just initStatic)
   Nothing
   Nothing
   Nothing
+  True
 
 noiseXKIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXKIHS HandshakeKeys{..} =
-  handshakeState
-  noiseXKI
+  handshakeState $ HandshakeStateParams
+  noiseXK
   ""
   psk
   (Just initStatic)
   Nothing
   (Just respStatic)
   Nothing
+  True
 
 noiseIKIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseIKIHS HandshakeKeys{..} =
-  handshakeState
-  noiseIKI
+  handshakeState $ HandshakeStateParams
+  noiseIK
   ""
   psk
   (Just initStatic)
   Nothing
   (Just respStatic)
   Nothing
+  True
 
 noiseXEIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXEIHS HandshakeKeys{..} =
-  handshakeState
-  noiseXEI
+  handshakeState $ HandshakeStateParams
+  noiseXE
   ""
   psk
   (Just initStatic)
   Nothing
   (Just respStatic)
   (Just respEphemeral)
+  True
 
 noiseIEIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseIEIHS HandshakeKeys{..} =
-  handshakeState
-  noiseIEI
+  handshakeState $ HandshakeStateParams
+  noiseIE
   ""
   psk
   (Just initStatic)
   Nothing
   (Just respStatic)
   (Just respEphemeral)
+  True
 
 noiseXXIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseXXIHS HandshakeKeys{..} =
-  handshakeState
-  noiseXXI
+  handshakeState $ HandshakeStateParams
+  noiseXX
   ""
   psk
   (Just initStatic)
   Nothing
   Nothing
   Nothing
+  True
 
 noiseIXIHS :: HandshakeKeys
            -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
 noiseIXIHS HandshakeKeys{..} =
-  handshakeState
-  noiseIXI
+  handshakeState $ HandshakeStateParams
+  noiseIX
   ""
   psk
   (Just initStatic)
   Nothing
   Nothing
   Nothing
+  True
+
+noiseXRIHS :: HandshakeKeys
+           -> HandshakeState ChaChaPoly1305 Curve25519 SHA256
+noiseXRIHS HandshakeKeys{..} = handshakeState $ HandshakeStateParams
+  noiseXR
+  ""
+  psk
+  (Just initStatic)
+  Nothing
+  Nothing
+  Nothing
+  True
