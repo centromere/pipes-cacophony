@@ -29,7 +29,7 @@ type MessagePipe       = Pipe ByteString ByteString
 
 messageEncryptPipe :: Cipher c
                    => MVar (CipherStatePair c)
-                   -> MessagePipe IO ()
+                   -> MessagePipe IO r
 messageEncryptPipe csmv = forever $ do
   msg <- await
 
@@ -42,7 +42,7 @@ messageEncryptPipe csmv = forever $ do
 
 messageDecryptPipe :: Cipher c
                    => MVar (CipherStatePair c)
-                   -> MessagePipe IO ()
+                   -> MessagePipe IO r
 messageDecryptPipe csmv = forever $ do
   msg <- await
 
