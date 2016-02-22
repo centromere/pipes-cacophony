@@ -15,12 +15,14 @@ import Data.ByteString          (ByteString)
 import Data.ByteString.Char8    (pack)
 import qualified Data.ByteString.Base64 as B64 (encode, decode)
 import Data.Maybe               (isNothing, fromJust)
+import Data.Monoid              ((<>))
 import Data.Text                (Text)
 import Data.Text.Encoding       (encodeUtf8, decodeUtf8)
 import qualified Data.Text as T (concat)
 import Data.Typeable            (Typeable)
 import GHC.Generics
 import Pipes
+import Pipes.Aeson              (DecodingError)
 import Pipes.Aeson.Unchecked
 import Pipes.Network.TCP
 import Pipes.Parse
@@ -166,7 +168,7 @@ processHandshake hks s logger = do
     case fromJust mer of
       Left e -> throwIO e
       Right (InitialMessage r) -> do
-        logger $ "requested handshake: " `mappend` (pack . show) r
+        logger $ "requested handshake: " <> (pack . show) r
         let hc = HandshakeCallbacks (writeSocket clientSender)
                                     (readSocket clientReceiver)
                                     (\_ -> return ())
@@ -175,21 +177,19 @@ processHandshake hks s logger = do
         putMVar csmv cs
         logger "handshake complete"
 
-  runEffect $ clientReceiver
-    >-> deserializeM
-    >-> messageDecryptPipe csmv
-    >-> messageEncryptPipe csmv
-    >-> serializeM
-    >-> clientSender
+  runEffect $ (() <$ parsed_ decode clientReceiver) >->
+              deserializeM                          >->
+              messageDecryptPipe csmv               >->
+              messageEncryptPipe csmv               >->
+              serializeM                            >->
+              clientSender
 
-deserializeM :: Pipe ByteString ByteString IO ()
-deserializeM = parseForever_ decode >-> grabResult
-  where
-    grabResult = forever $ do
-      mer <- await
-      case mer of
-        Left e -> lift $ throwIO e
-        Right (Message r) -> yield r
+deserializeM :: Pipe (Either DecodingError Message) ByteString IO ()
+deserializeM = forever $ do
+  mer <- await
+  case mer of
+    Left e -> lift $ throwIO e
+    Right (Message r) -> yield r
 
 serializeM :: Pipe ByteString ByteString IO ()
 serializeM = encodeResult >-> for cat encode

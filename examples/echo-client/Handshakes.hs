@@ -22,6 +22,7 @@ import qualified Data.Text as T (concat)
 import Data.Typeable            (Typeable)
 import GHC.Generics
 import Pipes
+import Pipes.Aeson              (DecodingError)
 import Pipes.Aeson.Unchecked
 import Pipes.Network.TCP
 import Pipes.Parse
@@ -170,17 +171,21 @@ processHandshake hks s ht = do
 
   putStrLn "Handshake complete"
 
-  race_ (runEffect (P.stdin >-> messageEncryptPipe csmv >-> serializeM >-> clientSender))
-        (runEffect (clientReceiver >-> deserializeM >-> messageDecryptPipe csmv >-> P.stdout))
+  race_ (runEffect (P.stdin                 >->
+                    messageEncryptPipe csmv >->
+                    serializeM              >->
+                    clientSender))
+        (runEffect ((() <$ parsed_ decode clientReceiver) >->
+                    deserializeM                          >->
+                    messageDecryptPipe csmv               >->
+                    P.stdout))
 
-deserializeM :: Pipe ByteString ByteString IO ()
-deserializeM = parseForever_ decode >-> grabResult
-  where
-    grabResult = forever $ do
-      mer <- await
-      case mer of
-        Left e -> lift $ throwIO e
-        Right (Message r) -> yield r
+deserializeM :: Pipe (Either DecodingError Message) ByteString IO r
+deserializeM = forever $ do
+  mer <- await
+  case mer of
+    Left e -> lift $ throwIO e
+    Right (Message r) -> yield r
 
 serializeM :: Pipe ByteString ByteString IO ()
 serializeM = encodeResult >-> for cat encode
