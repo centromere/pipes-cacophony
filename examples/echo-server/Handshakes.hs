@@ -6,7 +6,7 @@ module Handshakes
     processHandshake
   ) where
 
-import Control.Concurrent.MVar  (MVar, newEmptyMVar, putMVar)
+import Control.Concurrent.MVar  (newEmptyMVar, putMVar)
 import Control.Exception        (Exception, throw, throwIO)
 import Control.Monad            (forever,unless)
 import Data.Aeson               (ToJSON, FromJSON, parseJSON, (.:),
@@ -161,7 +161,8 @@ processHandshake hks s logger = do
   let clientReceiver = fromSocketTimeout 120000000 s 4096
       clientSender   = toSocket s
 
-  csmv <- newEmptyMVar :: IO (MVar (CipherStatePair ChaChaPoly1305))
+  scsmv <- newEmptyMVar
+  rcsmv <- newEmptyMVar
 
   mer <- evalStateT decode clientReceiver
   unless (isNothing mer) $
@@ -173,14 +174,15 @@ processHandshake hks s logger = do
                                     (readSocket clientReceiver)
                                     (\_ -> return ())
                                     (return "")
-        cs <- runHandshake (mkHandshakeState r hks) hc
-        putMVar csmv cs
+        (scs, rcs) <- runHandshake (mkHandshakeState r hks) hc
+        putMVar scsmv scs
+        putMVar rcsmv rcs
         logger "handshake complete"
 
   runEffect $ (() <$ parsed_ decode clientReceiver) >->
               deserializeM                          >->
-              messageDecryptPipe csmv               >->
-              messageEncryptPipe csmv               >->
+              messageDecryptPipe rcsmv              >->
+              messageEncryptPipe scsmv              >->
               serializeM                            >->
               clientSender
 

@@ -8,7 +8,6 @@
 
 module Pipes.Noise
   ( -- * Types
-    CipherStatePair,
     MessagePipe,
     -- * Pipes
     messageEncryptPipe,
@@ -24,30 +23,32 @@ import Crypto.Noise.Cipher     (Cipher)
 import Crypto.Noise.Handshake
 import Crypto.Noise.Types      (Plaintext(..), bsToSB', sbToBS')
 
-type CipherStatePair c = (SendingCipherState c, ReceivingCipherState c)
-type MessagePipe       = Pipe ByteString ByteString
+-- | Message pipes transform ByteStrings.
+type MessagePipe = Pipe ByteString ByteString
 
+-- | Creates a new 'MessagePipe' exclusively for encryption.
 messageEncryptPipe :: Cipher c
-                   => MVar (CipherStatePair c)
+                   => MVar (SendingCipherState c)
                    -> MessagePipe IO r
 messageEncryptPipe csmv = forever $ do
   msg <- await
 
-  (encState, unused) <- lift $ takeMVar csmv
+  encState <- lift $ takeMVar csmv
   let pt = Plaintext . bsToSB' $ msg
       (ct, encState') = encryptPayload pt encState
-  lift $ putMVar csmv (encState', unused)
+  lift $ putMVar csmv encState'
 
   yield ct
 
+-- | Creates a new 'MessagePipe' exclusively for decryption.
 messageDecryptPipe :: Cipher c
-                   => MVar (CipherStatePair c)
+                   => MVar (ReceivingCipherState c)
                    -> MessagePipe IO r
 messageDecryptPipe csmv = forever $ do
   msg <- await
 
-  (unused, decState) <- lift $ takeMVar csmv
+  decState <- lift $ takeMVar csmv
   let (Plaintext pt, decState') = decryptPayload msg decState
-  lift $ putMVar csmv (unused, decState')
+  lift $ putMVar csmv decState'
 
   yield . sbToBS' $ pt

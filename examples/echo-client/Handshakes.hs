@@ -8,7 +8,7 @@ module Handshakes
   ) where
 
 import Control.Concurrent.Async (race_)
-import Control.Concurrent.MVar  (MVar, newEmptyMVar, putMVar)
+import Control.Concurrent.MVar  (newEmptyMVar, putMVar)
 import Control.Exception        (Exception, throw, throwIO)
 import Control.Monad            (forever)
 import Data.Aeson               (ToJSON, FromJSON, parseJSON, (.:),
@@ -158,7 +158,8 @@ processHandshake hks s ht = do
   let clientSender = toSocket s
       clientReceiver = fromSocketTimeout 120000000 s 4096
 
-  csmv <- newEmptyMVar :: IO (MVar (CipherStatePair ChaChaPoly1305))
+  scsmv <- newEmptyMVar
+  rcsmv <- newEmptyMVar
 
   runEffect $ (encode . InitialMessage) ht >-> clientSender
 
@@ -166,18 +167,19 @@ processHandshake hks s ht = do
                               (readSocket clientReceiver)
                               (\_ -> return ())
                               (return "")
-  cs <- runHandshake (mkHandshakePipe ht hks) hc
-  putMVar csmv cs
+  (scs, rcs) <- runHandshake (mkHandshakePipe ht hks) hc
+  putMVar scsmv scs
+  putMVar rcsmv rcs
 
   putStrLn "Handshake complete"
 
-  race_ (runEffect (P.stdin                 >->
-                    messageEncryptPipe csmv >->
-                    serializeM              >->
+  race_ (runEffect (P.stdin                  >->
+                    messageEncryptPipe scsmv >->
+                    serializeM               >->
                     clientSender))
         (runEffect ((() <$ parsed_ decode clientReceiver) >->
                     deserializeM                          >->
-                    messageDecryptPipe csmv               >->
+                    messageDecryptPipe rcsmv              >->
                     P.stdout))
 
 deserializeM :: Pipe (Either DecodingError Message) ByteString IO r
