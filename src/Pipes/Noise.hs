@@ -21,7 +21,8 @@ import Pipes                   (Pipe, await, yield, lift)
 
 import Crypto.Noise.Cipher     (Cipher)
 import Crypto.Noise.Handshake
-import Crypto.Noise.Types      (Plaintext(..), bsToSB', sbToBS')
+import Crypto.Noise.Types
+import Data.ByteArray.Extend
 
 -- | Message pipes transform ByteStrings.
 type MessagePipe = Pipe ByteString ByteString
