@@ -1,5 +1,5 @@
 name:          pipes-cacophony
-version:       0.2.0
+version:       0.2.1
 synopsis:      Pipes for Noise-secured network connections.
 license:       PublicDomain
 license-file:  LICENSE
@@ -31,11 +31,6 @@ source-repository head
 
 flag hlint
 
-flag build-examples
-  description: Build example executables
-  default: False
-  manual: True
-
 flag llvm
   default: False
   manual: True
@@ -47,7 +42,7 @@ library
   build-depends:
     base       >=4.8 && <5,
     bytestring,
-    cacophony  >=0.5,
+    cacophony  >=0.6,
     pipes
   hs-source-dirs:   src
   default-language: Haskell2010
@@ -57,70 +52,6 @@ library
 
   if flag(llvm)
     ghc-options: -fllvm
-
---------------------------------------------------------------------------------
--- EXAMPLES
-
-executable echo-server
-  default-language: Haskell2010
-  hs-source-dirs:   examples/echo-server
-  main-is:          Main.hs
-
-  if flag(build-examples)
-    build-depends:
-      aeson,
-      async,
-      auto-update,
-      base              >=4.8 && <5,
-      base64-bytestring,
-      bytestring,
-      cacophony         >=0.5,
-      directory,
-      fast-logger,
-      pipes,
-      pipes-aeson,
-      pipes-cacophony,
-      pipes-network,
-      pipes-parse,
-      text,
-      unix,
-      unix-time
-  else
-    buildable: False
-
-  other-modules:
-    Handshakes
-
-  ghc-options:      -threaded -rtsopts -with-rtsopts=-N -Wall -fwarn-tabs
-
-executable echo-client
-  default-language: Haskell2010
-  hs-source-dirs:   examples/echo-client
-  main-is:          Main.hs
-
-  if flag(build-examples)
-    build-depends:
-      aeson,
-      async,
-      base              >=4.8 && <5,
-      base64-bytestring,
-      bytestring,
-      cacophony         >=0.5,
-      directory,
-      pipes,
-      pipes-aeson,
-      pipes-bytestring,
-      pipes-cacophony,
-      pipes-network,
-      pipes-parse,
-      text
-  else
-    buildable: False
-
-  other-modules:
-    Handshakes
-
-  ghc-options:      -threaded -rtsopts -with-rtsopts=-N -Wall -fwarn-tabs
 
 --------------------------------------------------------------------------------
 -- TESTS

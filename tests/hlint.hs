@@ -10,7 +10,6 @@ main = do
   args <- getArgs
   hints <- hlint $ [ "src"
                    , "tests"
-                   , "examples"
                    , "--hint=tests/.hlint"
                    , "--cpp-define=HLINT"
                    ] `mappend` args
