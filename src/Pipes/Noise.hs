@@ -8,48 +8,61 @@
 
 module Pipes.Noise
   ( -- * Types
-    MessagePipe,
+    InboundNoisePipe
+  , OutboundNoisePipe
     -- * Pipes
-    messageEncryptPipe,
-    messageDecryptPipe
+  , mkNoisePipes
   ) where
 
-import Control.Concurrent.MVar (MVar, putMVar, takeMVar)
-import Control.Monad           (forever)
+import Control.Concurrent.MVar (MVar, newMVar, putMVar, takeMVar)
 import Data.ByteString         (ByteString)
-import Pipes                   (Pipe, await, yield, lift)
+import Pipes                   (Pipe, MonadIO, await, yield, liftIO)
 
 import Crypto.Noise.Cipher     (Cipher)
-import Crypto.Noise.Handshake
-import Crypto.Noise.Types
+import Crypto.Noise.DH         (DH)
+import Crypto.Noise.Hash       (Hash)
+import Crypto.Noise
 import Data.ByteArray.Extend
 
--- | Message pipes transform ByteStrings.
-type MessagePipe = Pipe ByteString ByteString
+-- | Pipe used for inbound Noise messages.
+type InboundNoisePipe  = Pipe ByteString ScrubbedBytes
 
--- | Creates a new 'MessagePipe' exclusively for encryption.
-messageEncryptPipe :: Cipher c
-                   => MVar (SendingCipherState c)
-                   -> MessagePipe IO r
-messageEncryptPipe csmv = forever $ do
+-- | Pipe used for outbound Noise messages.
+type OutboundNoisePipe = Pipe ScrubbedBytes ByteString
+
+-- | Creates a pair of Pipes, the first used for inbound messages and the
+--   second used for outbound messages.
+mkNoisePipes :: (MonadIO m, Cipher c, DH d, Hash h)
+             => NoiseState c d h
+             -> IO (InboundNoisePipe m (Either NoiseException ()), OutboundNoisePipe m (Either NoiseException ()))
+mkNoisePipes ns = do
+  nsmv <- liftIO . newMVar $ ns
+  return (inboundPipe nsmv, outboundPipe nsmv)
+
+inboundPipe :: (MonadIO m, Cipher c, DH d, Hash h)
+            => MVar (NoiseState c d h)
+            -> InboundNoisePipe m (Either NoiseException ())
+inboundPipe nsmv = do
   msg <- await
 
-  encState <- lift $ takeMVar csmv
-  let pt = Plaintext . bsToSB' $ msg
-      (ct, encState') = encryptPayload pt encState
-  lift $ putMVar csmv encState'
+  ns <- liftIO . takeMVar $ nsmv
+  case readMessage ns msg of
+    Left e -> return . Left $ e
+    Right (pt, ns') -> do
+      liftIO . putMVar nsmv $ ns'
+      yield pt
+      inboundPipe nsmv
 
-  yield ct
-
--- | Creates a new 'MessagePipe' exclusively for decryption.
-messageDecryptPipe :: Cipher c
-                   => MVar (ReceivingCipherState c)
-                   -> MessagePipe IO r
-messageDecryptPipe csmv = forever $ do
+outboundPipe :: (MonadIO m, Cipher c, DH d, Hash h)
+             => MVar (NoiseState c d h)
+             -> OutboundNoisePipe m (Either NoiseException ())
+outboundPipe nsmv = do
   msg <- await
 
-  decState <- lift $ takeMVar csmv
-  let (Plaintext pt, decState') = decryptPayload msg decState
-  lift $ putMVar csmv decState'
-
-  yield . sbToBS' $ pt
+  ns <- liftIO . takeMVar $ nsmv
+  case writeMessage ns msg of
+    Left e -> return . Left $ e
+    Right (ct, ns') -> do
+      liftIO . putMVar nsmv $ ns'
+      yield ct
+      outboundPipe nsmv

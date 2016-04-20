@@ -1,8 +1,10 @@
+# 0.3.0
+
+* Brought up to date with cacophony API changes
+
 # 0.2.1
 
 * Removed examples
-
-* Brought up to date with cacophony API changes
 
 # 0.2.0
 
