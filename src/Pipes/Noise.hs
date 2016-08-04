@@ -15,6 +15,7 @@ module Pipes.Noise
   ) where
 
 import Control.Concurrent.MVar (MVar, newMVar, putMVar, takeMVar)
+import Control.Exception       (SomeException)
 import Data.ByteString         (ByteString)
 import Pipes                   (Pipe, MonadIO, await, yield, liftIO)
 
@@ -34,14 +35,15 @@ type OutboundNoisePipe = Pipe ScrubbedBytes ByteString
 --   second used for outbound messages.
 mkNoisePipes :: (MonadIO m, Cipher c, DH d, Hash h)
              => NoiseState c d h
-             -> IO (InboundNoisePipe m (Either NoiseException ()), OutboundNoisePipe m (Either NoiseException ()))
+             -> IO (InboundNoisePipe  m (Either SomeException ()),
+                    OutboundNoisePipe m (Either SomeException ()))
 mkNoisePipes ns = do
   nsmv <- liftIO . newMVar $ ns
   return (inboundPipe nsmv, outboundPipe nsmv)
 
 inboundPipe :: (MonadIO m, Cipher c, DH d, Hash h)
             => MVar (NoiseState c d h)
-            -> InboundNoisePipe m (Either NoiseException ())
+            -> InboundNoisePipe m (Either SomeException ())
 inboundPipe nsmv = do
   msg <- await
 
@@ -55,7 +57,7 @@ inboundPipe nsmv = do
 
 outboundPipe :: (MonadIO m, Cipher c, DH d, Hash h)
              => MVar (NoiseState c d h)
-             -> OutboundNoisePipe m (Either NoiseException ())
+             -> OutboundNoisePipe m (Either SomeException ())
 outboundPipe nsmv = do
   msg <- await
 

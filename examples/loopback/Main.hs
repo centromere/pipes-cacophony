@@ -1,7 +1,8 @@
 module Main where
 
+import Control.Exception     (SomeException)
 import Control.Lens
-import Control.Monad (forever)
+import Control.Monad         (forever)
 import Data.ByteString.Char8 (unpack, pack)
 import Pipes
 import qualified Pipes.Prelude as P
@@ -16,10 +17,10 @@ import Data.ByteArray.Extend
 
 import Pipes.Noise
 
-strToSB :: Pipe String ScrubbedBytes IO (Either NoiseException ())
+strToSB :: Pipe String ScrubbedBytes IO (Either SomeException ())
 strToSB = forever $ await >>= yield . convert . pack
 
-sbToStr :: Pipe ScrubbedBytes String IO (Either NoiseException ())
+sbToStr :: Pipe ScrubbedBytes String IO (Either SomeException ())
 sbToStr = forever $ await >>= yield . unpack . convert
 
 main :: IO ()
