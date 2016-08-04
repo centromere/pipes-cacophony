@@ -1,5 +1,5 @@
 name:          pipes-cacophony
-version:       0.3.0
+version:       0.4.0
 synopsis:      Pipes for Noise-secured network connections.
 license:       PublicDomain
 license-file:  LICENSE

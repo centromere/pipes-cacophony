@@ -1,3 +1,9 @@
+# 0.4.0
+
+* Brought up to date with cacophony API changes
+
+* Updated travis configuration
+
 # 0.3.0
 
 * Brought up to date with cacophony API changes
