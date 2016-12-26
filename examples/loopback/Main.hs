@@ -3,6 +3,7 @@ module Main where
 import Control.Exception     (SomeException)
 import Control.Lens
 import Control.Monad         (forever)
+import Data.ByteArray        (ScrubbedBytes, convert)
 import Data.ByteString.Char8 (unpack, pack)
 import Pipes
 import qualified Pipes.Prelude as P
@@ -13,7 +14,6 @@ import Crypto.Noise.DH
 import Crypto.Noise.DH.Curve25519
 import Crypto.Noise.HandshakePatterns (noiseNN)
 import Crypto.Noise.Hash.SHA256
-import Data.ByteArray.Extend
 
 import Pipes.Noise
 

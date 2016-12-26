@@ -16,6 +16,7 @@ module Pipes.Noise
 
 import Control.Concurrent.MVar (MVar, newMVar, putMVar, takeMVar)
 import Control.Exception       (SomeException)
+import Data.ByteArray          (ScrubbedBytes)
 import Data.ByteString         (ByteString)
 import Pipes                   (Pipe, MonadIO, await, yield, liftIO)
 
@@ -23,7 +24,6 @@ import Crypto.Noise.Cipher     (Cipher)
 import Crypto.Noise.DH         (DH)
 import Crypto.Noise.Hash       (Hash)
 import Crypto.Noise
-import Data.ByteArray.Extend
 
 -- | Pipe used for inbound Noise messages.
 type InboundNoisePipe  = Pipe ByteString ScrubbedBytes
