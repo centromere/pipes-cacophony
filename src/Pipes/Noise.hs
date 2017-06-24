@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 ----------------------------------------------------------------
 -- |
 -- Module      : Pipes.Noise
@@ -14,16 +13,13 @@ module Pipes.Noise
   , mkNoisePipes
   ) where
 
-import Control.Concurrent.MVar (MVar, newMVar, putMVar, takeMVar)
-import Control.Exception       (SomeException)
-import Data.ByteArray          (ScrubbedBytes)
-import Data.ByteString         (ByteString)
-import Pipes                   (Pipe, MonadIO, await, yield, liftIO)
+import Data.ByteString     (ByteString)
+import Pipes               (Pipe, await, yield)
 
-import Crypto.Noise.Cipher     (Cipher)
-import Crypto.Noise.DH         (DH)
-import Crypto.Noise.Hash       (Hash)
 import Crypto.Noise
+import Crypto.Noise.Cipher (Cipher)
+import Crypto.Noise.DH     (DH)
+import Crypto.Noise.Hash   (Hash)
 
 -- | Pipe used for inbound Noise messages.
 type InboundNoisePipe  = Pipe ByteString ScrubbedBytes
@@ -32,39 +28,40 @@ type InboundNoisePipe  = Pipe ByteString ScrubbedBytes
 type OutboundNoisePipe = Pipe ScrubbedBytes ByteString
 
 -- | Creates a pair of Pipes, the first used for inbound messages and the
---   second used for outbound messages.
-mkNoisePipes :: (MonadIO m, Cipher c, DH d, Hash h)
+--   second used for outbound messages. Note: The handshake for the given
+--   'NoiseState' must be complete. If it is not, this function will return
+--   'Nothing'.
+mkNoisePipes :: (Monad m, Cipher c, DH d, Hash h)
              => NoiseState c d h
-             -> IO (InboundNoisePipe  m (Either SomeException ()),
-                    OutboundNoisePipe m (Either SomeException ()))
-mkNoisePipes ns = do
-  nsmv <- liftIO . newMVar $ ns
-  return (inboundPipe nsmv, outboundPipe nsmv)
+             -> Maybe (InboundNoisePipe  m (NoiseResult c d h),
+                       OutboundNoisePipe m (NoiseResult c d h))
+mkNoisePipes ns | handshakeComplete ns = return (inboundPipe ns, outboundPipe ns)
+                | otherwise            = Nothing
 
-inboundPipe :: (MonadIO m, Cipher c, DH d, Hash h)
-            => MVar (NoiseState c d h)
-            -> InboundNoisePipe m (Either SomeException ())
-inboundPipe nsmv = do
+inboundPipe :: (Monad m, Cipher c, DH d, Hash h)
+            => NoiseState c d h
+            -> InboundNoisePipe m (NoiseResult c d h)
+inboundPipe ns = do
   msg <- await
 
-  ns <- liftIO . takeMVar $ nsmv
-  case readMessage ns msg of
-    Left e -> return . Left $ e
-    Right (pt, ns') -> do
-      liftIO . putMVar nsmv $ ns'
+  let result = readMessage (convert msg) ns
+  case result of
+    NoiseResultMessage pt ns' -> do
       yield pt
-      inboundPipe nsmv
+      inboundPipe ns'
+    NoiseResultNeedPSK   _ -> return result
+    NoiseResultException _ -> return result
 
-outboundPipe :: (MonadIO m, Cipher c, DH d, Hash h)
-             => MVar (NoiseState c d h)
-             -> OutboundNoisePipe m (Either SomeException ())
-outboundPipe nsmv = do
+outboundPipe :: (Monad m, Cipher c, DH d, Hash h)
+             => NoiseState c d h
+             -> OutboundNoisePipe m (NoiseResult c d h)
+outboundPipe ns = do
   msg <- await
 
-  ns <- liftIO . takeMVar $ nsmv
-  case writeMessage ns msg of
-    Left e -> return . Left $ e
-    Right (ct, ns') -> do
-      liftIO . putMVar nsmv $ ns'
-      yield ct
-      outboundPipe nsmv
+  let result = writeMessage msg ns
+  case result of
+    NoiseResultMessage ct ns' -> do
+      yield . convert $ ct
+      outboundPipe ns'
+    NoiseResultNeedPSK   _ -> return result
+    NoiseResultException _ -> return result

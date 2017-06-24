@@ -1,0 +1,79 @@
+name: pipes-cacophony
+synopsis: Pipes for Noise-secured network connections.
+version: 0.5.0
+license: PublicDomain
+license-file: LICENSE
+maintainer: John Galt <jgalt@centromere.net>
+category: Cryptography
+github: centromere/pipes-cacophony
+ghc-options: -Wall
+description: |
+  A set of pipes to secure network connections with the
+  <https://github.com/trevp/noise/blob/master/noise.md Noise> protocol.
+extra-source-files:
+  - .travis.yml
+  - README.md
+  - changelog.md
+  - LICENSE
+  - stack.yaml
+  - package.yaml
+  - tests/.hlint
+
+flags:
+  build-examples:
+    description: Build examples
+    default: False
+    manual: True
+
+library:
+  source-dirs: src
+  dependencies:
+    - base >= 4.9 && < 4.10
+    - bytestring
+    - cacophony >= 0.10
+    - pipes
+
+  exposed-modules:
+    - Pipes.Noise
+
+  default-extensions:
+    - OverloadedStrings
+
+tests:
+  hlint:
+    main: hlint.hs
+    source-dirs: tests/hlint
+    dependencies:
+      - base >= 4.9 && < 4.10
+      - hlint
+
+    ghc-options:
+      - -O2
+      - -rtsopts
+      - -threaded
+      - -with-rtsopts=-N
+
+executables:
+  loopback:
+    source-dirs: examples/loopback
+    main: Main.hs
+    when:
+      - condition: 'flag(build-examples)'
+        then:
+          dependencies:
+            - base >= 4.9 && < 4.10
+            - bytestring
+            - cacophony >= 0.10
+            - pipes
+            - pipes-cacophony
+        else:
+          buildable: False
+
+    ghc-options:
+      - -O2
+      - -rtsopts
+      - -threaded
+      - -with-rtsopts=-N
+
+    default-extensions:
+      - OverloadedStrings

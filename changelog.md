@@ -1,3 +1,7 @@
+# 0.5.0
+
+* Brought up to date with cacophony API changes
+
 # 0.4.1
 
 * Brought up to date with cacophony API changes

@@ -1,10 +1,8 @@
 module Main where
 
-import Control.Exception     (SomeException)
-import Control.Lens
 import Control.Monad         (forever)
-import Data.ByteArray        (ScrubbedBytes, convert)
 import Data.ByteString.Char8 (unpack, pack)
+import Data.Maybe            (fromMaybe)
 import Pipes
 import qualified Pipes.Prelude as P
 
@@ -17,28 +15,49 @@ import Crypto.Noise.Hash.SHA256
 
 import Pipes.Noise
 
-strToSB :: Pipe String ScrubbedBytes IO (Either SomeException ())
+strToSB :: (Cipher c, DH d, Hash h)
+        => Pipe String ScrubbedBytes IO (NoiseResult c d h)
 strToSB = forever $ await >>= yield . convert . pack
 
-sbToStr :: Pipe ScrubbedBytes String IO (Either SomeException ())
+sbToStr :: (Cipher c, DH d, Hash h)
+        => Pipe ScrubbedBytes String IO (NoiseResult c d h)
 sbToStr = forever $ await >>= yield . unpack . convert
+
+performHandshake :: (Cipher c, DH d, Hash h)
+                 => NoiseState c d h
+                 -> NoiseState c d h
+                 -> (NoiseState c d h, NoiseState c d h)
+performHandshake ins rns = (ins'', rns'')
+  where
+    (NoiseResultMessage ct  ins')  = writeMessage mempty ins
+    (NoiseResultMessage _   rns')  = readMessage ct rns
+    (NoiseResultMessage ct' rns'') = writeMessage mempty rns'
+    (NoiseResultMessage _   ins'') = readMessage ct' ins'
 
 main :: IO ()
 main = do
   iek <- dhGenKey :: IO (KeyPair Curve25519)
   rek <- dhGenKey :: IO (KeyPair Curve25519)
 
-  let idho     = defaultHandshakeOpts noiseNN InitiatorRole
-      rdho     = defaultHandshakeOpts noiseNN ResponderRole
-      iho      = idho & hoLocalEphemeral .~ Just iek
-      rho      = rdho & hoLocalEphemeral .~ Just rek
-      ins      = noiseState iho :: NoiseState ChaChaPoly1305 Curve25519 SHA256
-      rns      = noiseState rho :: NoiseState ChaChaPoly1305 Curve25519 SHA256
+  let idho = defaultHandshakeOpts InitiatorRole "cacophony"
+      rdho = defaultHandshakeOpts ResponderRole "cacophony"
+      iho  = setLocalEphemeral (Just iek) idho
+      rho  = setLocalEphemeral (Just rek) rdho
+      ins  = noiseState iho noiseNN :: NoiseState ChaChaPoly1305 Curve25519 SHA256
+      rns  = noiseState rho noiseNN :: NoiseState ChaChaPoly1305 Curve25519 SHA256
 
-  (iip, iop) <- mkNoisePipes ins
-  (rip, rop) <- mkNoisePipes rns
+      (ins', rns') = performHandshake ins rns
+      (iip, iop)   = fromMaybe (error "unable to make Noise pipe") $ mkNoisePipes ins'
+      (rip, rop)   = fromMaybe (error "unable to make Noise pipe") $ mkNoisePipes rns'
 
-  result <- runEffect $ (Right () <$ P.stdinLn) >-> strToSB >-> iop >-> rip >-> rop >-> iip >-> sbToStr >-> (Right () <$ P.stdoutLn)
+  result <- runEffect $ (undefined <$ P.stdinLn)
+                        >-> strToSB
+                        >-> iop
+                        >-> rip
+                        >-> rop
+                        >-> iip
+                        >-> sbToStr
+                        >-> (undefined <$ P.stdoutLn)
   case result of
-    Left e  -> print e
-    Right _ -> return ()
+    NoiseResultException ex -> print ex
+    _ -> return ()
